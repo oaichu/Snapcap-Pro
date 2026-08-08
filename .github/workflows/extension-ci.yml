@@ -1,0 +1,145 @@
+name: Extension CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint Extension
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: |
+          npx eslint --no-eslintrc --rule '{"no-undef": "error", "no-unused-vars": "warning"}' \
+            --parser-options ecmaVersion:2022,browser:true,sourceType:module \
+            background/service_worker.js content/content_script.js popup/popup.js editor/editor.js offscreen/offscreen.js
+
+      - name: Check formatting
+        run: npx prettier --check "**/*.{js,json,css,html,md}"
+
+  validate-manifest:
+    name: Validate Manifest
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate manifest.json
+        run: |
+          node -e "
+            const fs = require('fs');
+            const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+            
+            const requiredFields = ['manifest_version', 'name', 'version', 'permissions'];
+            const missingFields = requiredFields.filter(f => !manifest[f]);
+            
+            if (missingFields.length > 0) {
+              console.error('Missing required fields:', missingFields);
+              process.exit(1);
+            }
+            
+            if (manifest.manifest_version !== 3) {
+              console.error('Manifest version must be 3');
+              process.exit(1);
+            }
+            
+            console.log('Manifest validation passed');
+          "
+
+      - name: Check icon files
+        run: |
+          for icon in icons/icon16.png icons/icon48.png icons/icon128.png; do
+            if [ ! -f "$icon" ]; then
+              echo "Missing icon: $icon"
+              exit 1
+            fi
+          done
+          echo "All icons present"
+
+  build-package:
+    name: Build Extension Package
+    runs-on: ubuntu-latest
+    needs: [lint, validate-manifest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create extension package
+        run: |
+          mkdir -p dist
+          zip -r dist/snapcap-extension-v$(node -e "console.log(require('./manifest.json').version)") \
+            background/ content/ editor/ icons/ offscreen/ popup/ manifest.json \
+            -x "*.DS_Store"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-package
+          path: dist/
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Check for potential secrets in code
+          SECRET_PATTERNS=(
+            'api[_-]?key\s*[:=]\s*['"'"'"'"'"'"'"'"'"]'
+            'password\s*[:=]\s*['"'"'"'"'"'"'"'"'"]'
+            'secret\s*[:=]\s*['"'"'"'"'"'"'"'"'"]'
+            'token\s*[:=]\s*['"'"'"'"'"'"'"'"'"]'
+          )
+          
+          for pattern in "${SECRET_PATTERNS[@]}"; do
+            if grep -rEi "$pattern" --include="*.js" background/ content/ editor/ popup/ offscreen/ 2>/dev/null; then
+              echo "Potential secret found matching pattern: $pattern"
+            fi
+          done
+          
+          echo "Secret scan complete"
+
+      - name: Check for unsafe practices
+        run: |
+          # Check for eval usage
+          if grep -rE '\beval\s*\(' --include="*.js" background/ content/ editor/ popup/ offscreen/ 2>/dev/null; then
+            echo "WARNING: eval() usage detected"
+          fi
+          
+          # Check for innerHTML usage
+          if grep -rE '\binnerHTML\s*=' --include="*.js" background/ content/ editor/ popup/ offscreen/ 2>/dev/null; then
+            echo "INFO: innerHTML usage detected - ensure proper sanitization"
+          fi
+          
+          echo "Security scan complete"
