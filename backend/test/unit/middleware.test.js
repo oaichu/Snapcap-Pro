@@ -7,39 +7,39 @@ const mockGetUser = mock.fn();
 const mockAdmin = {
   auth: () => ({
     verifyIdToken: mockVerifyIdToken,
-    getUser: mockGetUser
-  })
+    getUser: mockGetUser,
+  }),
 };
 
 const mockFirebaseAdmin = {
   apps: [],
   initializeApp: mock.fn(),
   credential: {
-    cert: mock.fn()
-  }
+    cert: mock.fn(),
+  },
 };
 
 async function authenticate(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return next(new Error('No authentication token provided'));
     }
 
     const token = authHeader.split('Bearer ')[1];
-    
+
     if (!token) {
       return next(new Error('Invalid authentication token'));
     }
 
     const decodedToken = await mockAdmin.auth().verifyIdToken(token);
-    
+
     req.user = {
       uid: decodedToken.uid,
       email: decodedToken.email,
       displayName: decodedToken.displayName,
-      emailVerified: decodedToken.emailVerified
+      emailVerified: decodedToken.emailVerified,
     };
 
     next();
@@ -70,7 +70,7 @@ describe('Authentication Middleware', () => {
       uid: 'user123',
       email: 'test@example.com',
       displayName: 'Test User',
-      emailVerified: true
+      emailVerified: true,
     };
 
     mockVerifyIdToken.mock.mockImplementation(async () => decodedToken);
@@ -131,7 +131,7 @@ describe('Rate Limiter', () => {
   test('should create rate limiter with correct config', () => {
     const config = {
       windowMs: 15 * 60 * 1000,
-      max: 100
+      max: 100,
     };
 
     assert.equal(config.windowMs, 900000);
@@ -150,7 +150,7 @@ describe('AppError', () => {
     }
 
     const error = new AppError('Test error', 400);
-    
+
     assert.equal(error.message, 'Test error');
     assert.equal(error.statusCode, 400);
     assert.equal(error.isOperational, true);

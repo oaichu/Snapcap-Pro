@@ -2,6 +2,11 @@
   if (window.__snapcapLoaded) return;
   window.__snapcapLoaded = true;
 
+  // Wire-protocol action strings are duplicated per file; keep spellings consistent with §0 of the plan.
+  const ROLE = 'content';
+  const ROLE_SW = 'sw';
+  const ACTION_STOP_RECORDING_TRIGGER = 'STOP_RECORDING_TRIGGER';
+
   let isSelecting = false;
   let startX, startY;
   let selectionBox = null;
@@ -9,6 +14,9 @@
 
   // Listen for messages
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (!msg || typeof msg.action !== 'string') return;
+    if (msg.target && msg.target !== ROLE) return; // §0 target discipline
+
     if (msg.action === 'START_COUNTDOWN') {
       runCountdown(msg.delay, () => sendResponse({ status: 'done' }));
       return true;
@@ -17,52 +25,54 @@
     if (msg.action === 'TRIGGER_SELECTION') {
       startSelection();
       sendResponse({ status: 'started' });
-      return true;
+      return;
     }
 
     if (msg.action === 'EXECUTE_FULL_PAGE_SCROLL') {
-      captureFullPage().then(tiles => {
-        sendResponse({ status: 'success', tiles });
-      }).catch(err => {
-        sendResponse({ status: 'error', error: err.message });
-      });
+      captureFullPage()
+        .then(tiles => {
+          sendResponse({ status: 'success', tiles });
+        })
+        .catch(err => {
+          sendResponse({ status: 'error', error: err.message });
+        });
       return true;
     }
 
     if (msg.action === 'SHOW_RECORD_BADGE') {
-      showRecordBadge(msg.duration);
+      showRecordBadge(msg.duration, msg.startedAt);
       sendResponse({ status: 'badge_shown' });
-      return true;
+      return;
     }
 
     if (msg.action === 'HIDE_RECORD_BADGE') {
       hideRecordBadge();
       sendResponse({ status: 'badge_hidden' });
-      return true;
+      return;
     }
 
     if (msg.action === 'SHOW_TOAST') {
       showToast(msg.message);
       sendResponse({ status: 'toast_shown' });
-      return true;
+      return;
     }
   });
 
   function runCountdown(seconds, callback) {
-    let overlay = document.createElement('div');
+    const overlay = document.createElement('div');
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.8); display: flex; align-items: center;
       justify-content: center; z-index: 2147483647; font-family: system-ui;
     `;
-    let num = document.createElement('div');
+    const num = document.createElement('div');
     num.style.cssText = 'font-size: 120px; font-weight: 700; color: white;';
     num.textContent = seconds;
     overlay.appendChild(num);
     document.body.appendChild(overlay);
 
     let count = seconds;
-    let timer = setInterval(() => {
+    const timer = setInterval(() => {
       count--;
       if (count > 0) {
         num.textContent = count;
@@ -77,21 +87,33 @@
   function startSelection() {
     if (document.getElementById('snapcap-selection')) return;
 
-    let container = document.createElement('div');
+    const container = document.createElement('div');
     container.id = 'snapcap-selection';
     container.style.cssText = `
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.4); cursor: crosshair; z-index: 2147483647;
     `;
 
-    document.addEventListener('keydown', function escHandler(e) {
-      if (e.key === 'Escape') {
-        container.remove();
-        document.removeEventListener('keydown', escHandler);
+    // Single teardown path for the legacy selection overlay. Every exit
+    // (Escape AND normal mouseup completion) must run it, or the
+    // document-level keydown listener leaks for the lifetime of the page.
+    function teardownSelection() {
+      document.removeEventListener('keydown', escHandler);
+      isSelecting = false;
+      container.remove();
+      if (selectionBox) {
+        selectionBox.remove();
+        selectionBox = null;
       }
-    });
+    }
 
-    container.addEventListener('mousedown', (e) => {
+    function escHandler(e) {
+      if (e.key === 'Escape') teardownSelection();
+    }
+
+    document.addEventListener('keydown', escHandler);
+
+    container.addEventListener('mousedown', e => {
       isSelecting = true;
       startX = e.clientX;
       startY = e.clientY;
@@ -104,7 +126,7 @@
       document.body.appendChild(selectionBox);
     });
 
-    container.addEventListener('mousemove', (e) => {
+    container.addEventListener('mousemove', e => {
       if (!isSelecting || !selectionBox) return;
 
       const x = Math.min(startX, e.clientX);
@@ -121,26 +143,95 @@
         x: Math.round(x * window.devicePixelRatio),
         y: Math.round(y * window.devicePixelRatio),
         width: Math.round(w * window.devicePixelRatio),
-        height: Math.round(h * window.devicePixelRatio)
+        height: Math.round(h * window.devicePixelRatio),
       };
     });
 
     container.addEventListener('mouseup', () => {
       isSelecting = false;
       if (cropParams && cropParams.width > 10 && cropParams.height > 10) {
-        chrome.runtime.sendMessage({ action: 'CROP_VISIBLE_TAB', crop: cropParams }, res => {
-          if (res && res.dataUrl) {
-            showCaptureOverlay(res.dataUrl, res.id);
-          } else if (res && res.error) {
-            showToast(res.error);
+        chrome.runtime.sendMessage(
+          { action: 'CROP_VISIBLE_TAB', target: ROLE_SW, crop: cropParams },
+          res => {
+            if (res && res.dataUrl) {
+              showCaptureOverlay(res.dataUrl, res.id);
+            } else if (res && res.error) {
+              showToast(res.error);
+            }
           }
-        });
+        );
       }
-      container.remove();
-      if (selectionBox) selectionBox.remove();
+      teardownSelection();
     });
 
     document.body.appendChild(container);
+  }
+
+  // -------------------------------------------------------------------------
+  // Full page capture
+  // -------------------------------------------------------------------------
+  const MIN_CAPTURE_INTERVAL_MS = 500; // chrome.tabs.captureVisibleTab allows ~2/s
+  const CAPTURE_BACKOFF_MS = 1200;
+  const MAX_TILES = 30;
+  const MAX_SCAN_NODES = 600;
+  const MAX_SCAN_DEPTH = 4;
+
+  let lastCaptureAt = 0;
+
+  // Bounded replacement for querySelectorAll('*') + getComputedStyle on every
+  // node: fixed/sticky chrome lives near the top of the tree (M-2).
+  function collectFixedElements() {
+    const found = [];
+    const queue = [];
+    const root = document.body;
+    if (!root) return found;
+
+    for (const child of root.children) queue.push({ el: child, depth: 0 });
+
+    let scanned = 0;
+    while (queue.length && scanned < MAX_SCAN_NODES) {
+      const { el, depth } = queue.shift();
+      scanned++;
+
+      let position = '';
+      try {
+        position = window.getComputedStyle(el).position;
+      } catch (err) {
+        continue;
+      }
+
+      if (position === 'fixed' || position === 'sticky') {
+        found.push({ el, vis: el.style.visibility });
+        continue; // descendants inherit the ancestor's visibility
+      }
+
+      if (depth < MAX_SCAN_DEPTH) {
+        for (const child of el.children) queue.push({ el: child, depth: depth + 1 });
+      }
+    }
+
+    return found;
+  }
+
+  async function captureTile() {
+    const wait = MIN_CAPTURE_INTERVAL_MS - (Date.now() - lastCaptureAt);
+    if (wait > 0) await sleep(wait);
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      lastCaptureAt = Date.now();
+      const res = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ action: 'CAPTURE_TAB_PROMISE', target: ROLE_SW }, reply =>
+          resolve(reply || { dataUrl: null, error: 'No response' })
+        );
+      });
+
+      if (res.dataUrl) return res.dataUrl;
+      if (!/Exceeded maximum|rate-limit/i.test(res.error || '')) return null;
+
+      await sleep(CAPTURE_BACKOFF_MS); // back off and retry once
+    }
+
+    return null;
   }
 
   async function captureFullPage() {
@@ -164,71 +255,89 @@
     let noScrollCount = 0;
     let prevScrollY = -1;
 
-    // Hide fixed elements
-    const fixedElements = [];
-    document.querySelectorAll('*').forEach(el => {
-      const style = window.getComputedStyle(el);
-      if (style.position === 'fixed' || style.position === 'sticky') {
-        fixedElements.push({ el, vis: el.style.visibility });
-      }
-    });
+    // finally does not run if the frame is destroyed mid-loop, so abort as
+    // soon as the page starts going away (L-3).
+    let aborted = false;
+    const abort = () => {
+      aborted = true;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') aborted = true;
+    };
+    window.addEventListener('pagehide', abort);
+    document.addEventListener('visibilitychange', onVisibility);
 
-    window.scrollTo(0, 0);
-    await sleep(200);
+    const fixedElements = collectFixedElements();
 
-    while (currentScroll < totalHeight) {
-      window.scrollTo(0, currentScroll);
+    try {
+      window.scrollTo(0, 0);
       await sleep(200);
 
-      const actualY = window.scrollY;
-      if (actualY === prevScrollY) {
-        noScrollCount++;
-        if (noScrollCount >= MAX_ATTEMPTS) break;
-      } else {
-        noScrollCount = 0;
-      }
-      prevScrollY = actualY;
+      while (currentScroll < totalHeight && !aborted && tiles.length < MAX_TILES) {
+        window.scrollTo(0, currentScroll);
+        await sleep(200);
 
-      // Hide fixed elements after first tile
-      if (tiles.length === 0) {
-        fixedElements.forEach(({ el, vis }) => {
-          el.style.visibility = 'hidden';
-        });
-      }
+        const actualY = window.scrollY;
+        if (actualY === prevScrollY) {
+          noScrollCount++;
+          if (noScrollCount >= MAX_ATTEMPTS) break;
+        } else {
+          noScrollCount = 0;
+        }
+        prevScrollY = actualY;
 
-      const dataUrl = await new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'CAPTURE_TAB_PROMISE' }, res => {
-          resolve(res?.dataUrl || null);
-        });
+        // Hide fixed elements after the first tile
+        if (tiles.length === 0) {
+          fixedElements.forEach(({ el }) => {
+            el.style.visibility = 'hidden';
+          });
+        }
+
+        const dataUrl = await captureTile();
+        if (aborted) break;
+
+        if (dataUrl) {
+          tiles.push({
+            y: actualY,
+            viewportHeight,
+            totalHeight,
+            devicePixelRatio: window.devicePixelRatio || 1,
+            dataUrl,
+          });
+        }
+
+        if (currentScroll + viewportHeight >= totalHeight) break;
+        currentScroll += viewportHeight - 20;
+      }
+    } finally {
+      window.removeEventListener('pagehide', abort);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.scrollTo(0, originalScroll);
+      fixedElements.forEach(({ el, vis }) => {
+        el.style.visibility = vis;
       });
-
-      if (dataUrl) {
-        tiles.push({
-          y: actualY,
-          viewportHeight,
-          totalHeight,
-          devicePixelRatio: window.devicePixelRatio || 1,
-          dataUrl
-        });
-      }
-
-      if (currentScroll + viewportHeight >= totalHeight) break;
-      currentScroll += viewportHeight - 20;
     }
-
-    // Restore
-    window.scrollTo(0, originalScroll);
-    fixedElements.forEach(({ el, vis }) => {
-      el.style.visibility = vis;
-    });
 
     return tiles;
   }
 
-  function showRecordBadge(duration) {
+  // -------------------------------------------------------------------------
+  // Recording badge (best effort; the popup Stop button is primary — L-2)
+  // -------------------------------------------------------------------------
+  const BADGE_TTL_GRACE_MS = 15000;
+  let badgeInterval = null;
+  let badgeTtlTimer = null;
+
+  function showRecordBadge(duration, startedAt) {
     if (document.getElementById('snapcap-badge')) return;
 
-    let badge = document.createElement('div');
+    const total = Math.max(1, parseInt(duration, 10) || 30);
+    const started = typeof startedAt === 'number' && startedAt > 0 ? startedAt : Date.now();
+    const endsAt = started + total * 1000;
+
+    const remaining = () => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+
+    const badge = document.createElement('div');
     badge.id = 'snapcap-badge';
     badge.style.cssText = `
       position: fixed; top: 20px; right: 20px; z-index: 2147483647;
@@ -238,45 +347,130 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     `;
 
-    let timer = duration;
     badge.innerHTML = `
       <span style="width:8px;height:8px;background:white;border-radius:50%;animation:pulse 1s infinite"></span>
-      <span id="snapcap-timer">${timer}s</span>
+      <span id="snapcap-timer">${remaining()}s</span>
       <button id="snapcap-stop" style="background:white;color:#ef4444;border:none;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">Stop</button>
     `;
     document.body.appendChild(badge);
 
-    let interval = setInterval(() => {
-      timer--;
-      let timerEl = document.getElementById('snapcap-timer');
-      if (timerEl) timerEl.textContent = timer + 's';
-      if (timer <= 0) clearInterval(interval);
+    badgeInterval = setInterval(() => {
+      const timerEl = document.getElementById('snapcap-timer');
+      if (!timerEl) {
+        hideRecordBadge();
+        return;
+      }
+      timerEl.textContent = remaining() + 's';
     }, 1000);
 
-    document.getElementById('snapcap-stop').addEventListener('click', () => {
-      clearInterval(interval);
-      chrome.runtime.sendMessage({ action: 'STOP_RECORDING_TRIGGER' });
-      hideRecordBadge();
-    });
+    // Self-removal: the badge must never outlive the session, even if the
+    // service worker died before it could send HIDE_RECORD_BADGE.
+    badgeTtlTimer = setTimeout(
+      hideRecordBadge,
+      Math.max(0, endsAt - Date.now()) + BADGE_TTL_GRACE_MS
+    );
+
+    const stopBtn = document.getElementById('snapcap-stop');
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => {
+        chrome.runtime.sendMessage({
+          action: ACTION_STOP_RECORDING_TRIGGER,
+          target: ROLE_SW,
+          source: 'badge',
+        });
+        hideRecordBadge();
+      });
+    }
   }
 
+  // Idempotent: safe to call any number of times, badge present or not.
   function hideRecordBadge() {
-    let badge = document.getElementById('snapcap-badge');
+    if (badgeInterval) {
+      clearInterval(badgeInterval);
+      badgeInterval = null;
+    }
+    if (badgeTtlTimer) {
+      clearTimeout(badgeTtlTimer);
+      badgeTtlTimer = null;
+    }
+    const badge = document.getElementById('snapcap-badge');
     if (badge) badge.remove();
   }
 
-  // In-page result overlay with quick actions (used when the popup is closed,
-  // e.g. after drag-select).
+  // -------------------------------------------------------------------------
+  // In-page result overlay, isolated in a CLOSED shadow root.
+  // The light-DOM attribute marker is the single existence check; teardown
+  // always removes the HOST, which nukes the subtree regardless of shadow mode.
+  // -------------------------------------------------------------------------
+  const HOST_MARKER = 'data-snapcap-host';
+  const OVERLAY_MAX_LIFETIME_MS = 120000;
+
+  let overlayHost = null;
+  let overlayRoot = null; // retained ShadowRoot (mode: 'closed')
+  let overlayEscHandler = null;
+  let overlayLifetimeTimer = null;
+  let resultCardMounted = false;
+
+  function overlayHostExists() {
+    return !!document.querySelector('[' + HOST_MARKER + ']');
+  }
+
+  function ensureOverlayRoot() {
+    if (overlayHost && document.contains(overlayHost) && overlayRoot) return overlayRoot;
+
+    // Drop any orphan host left behind by a previous injection.
+    const orphan = document.querySelector('[' + HOST_MARKER + ']');
+    if (orphan) orphan.remove();
+
+    overlayHost = document.createElement('div');
+    overlayHost.setAttribute(HOST_MARKER, '');
+    overlayHost.style.cssText = `
+      all: initial; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 2147483647; pointer-events: none;
+    `;
+    overlayRoot = overlayHost.attachShadow({ mode: 'closed' });
+    (document.body || document.documentElement).appendChild(overlayHost);
+    return overlayRoot;
+  }
+
+  // THE single teardown chokepoint for all SnapCap in-page UI.
+  function destroyOverlay() {
+    if (overlayLifetimeTimer) {
+      clearTimeout(overlayLifetimeTimer);
+      overlayLifetimeTimer = null;
+    }
+    if (overlayEscHandler) {
+      document.removeEventListener('keydown', overlayEscHandler, true);
+      overlayEscHandler = null;
+    }
+    resultCardMounted = false;
+
+    const host = document.querySelector('[' + HOST_MARKER + ']');
+    if (host) host.remove();
+    if (overlayHost && overlayHost.parentNode) overlayHost.remove();
+
+    overlayHost = null;
+    overlayRoot = null;
+  }
+
+  // Removes a transient node (toast); tears the host down once nothing is left.
+  function dismissOverlayNode(node) {
+    if (node && node.parentNode) node.parentNode.removeChild(node);
+    if (!overlayRoot) return;
+    if (!resultCardMounted && overlayRoot.childElementCount === 0) destroyOverlay();
+  }
+
   function showCaptureOverlay(dataUrl, captureId) {
-    if (document.getElementById('snapcap-result')) return;
+    if (resultCardMounted && overlayHostExists()) return;
+
+    const root = ensureOverlayRoot();
 
     const overlay = document.createElement('div');
-    overlay.id = 'snapcap-result';
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(10,10,15,0.75); display: flex; align-items: center;
-      justify-content: center; z-index: 2147483647; font-family: Inter, system-ui, sans-serif;
-      backdrop-filter: blur(4px);
+      justify-content: center; font-family: Inter, system-ui, sans-serif;
+      backdrop-filter: blur(4px); pointer-events: auto;
     `;
 
     const card = document.createElement('div');
@@ -284,6 +478,7 @@
       background: #12121a; border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px; padding: 16px; max-width: min(560px, 90vw);
       box-shadow: 0 24px 80px rgba(0,0,0,0.6); text-align: center;
+      pointer-events: auto;
     `;
 
     const img = document.createElement('img');
@@ -313,8 +508,12 @@
         font-weight: 600; cursor: pointer; font-family: inherit; min-width: 72px;
         transition: transform 0.1s ease;
       `;
-      btn.onmousedown = () => { btn.style.transform = 'scale(0.96)'; };
-      btn.onmouseup = () => { btn.style.transform = 'scale(1)'; };
+      btn.onmousedown = () => {
+        btn.style.transform = 'scale(0.96)';
+      };
+      btn.onmouseup = () => {
+        btn.style.transform = 'scale(1)';
+      };
       return btn;
     };
 
@@ -326,8 +525,9 @@
     btnDownload.addEventListener('click', () => {
       chrome.runtime.sendMessage({
         action: 'DOWNLOAD_IMAGE',
+        target: ROLE_SW,
         dataUrl,
-        filename: `snapcap-${Date.now()}.png`
+        filename: `snapcap-${Date.now()}.png`,
       });
       showOverlayToast('Downloading...');
     });
@@ -361,8 +561,13 @@
     });
 
     btnEdit.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'OPEN_EDITOR', mode: 'image', id: captureId });
-      overlay.remove();
+      chrome.runtime.sendMessage({
+        action: 'OPEN_EDITOR',
+        target: ROLE_SW,
+        mode: 'image',
+        id: captureId,
+      });
+      destroyOverlay();
     });
 
     actions.append(btnDownload, btnCopy, btnShare, btnEdit);
@@ -373,49 +578,46 @@
       margin-top: 12px; background: none; border: none; color: #8b8b9e;
       font-size: 12px; cursor: pointer; font-family: inherit;
     `;
-    closeBtn.addEventListener('click', () => overlay.remove());
+    closeBtn.addEventListener('click', () => destroyOverlay());
 
     card.append(title, img, actions, closeBtn);
     overlay.appendChild(card);
 
     overlay.addEventListener('click', e => {
-      if (e.target === overlay) overlay.remove();
+      if (e.target === overlay) destroyOverlay();
     });
 
-    document.addEventListener('keydown', function escResult(e) {
-      if (e.key === 'Escape') {
-        overlay.remove();
-        document.removeEventListener('keydown', escResult);
-      }
-    });
+    overlayEscHandler = e => {
+      if (e.key === 'Escape') destroyOverlay();
+    };
+    document.addEventListener('keydown', overlayEscHandler, true);
 
-    document.body.appendChild(overlay);
+    overlayLifetimeTimer = setTimeout(destroyOverlay, OVERLAY_MAX_LIFETIME_MS);
+
+    root.appendChild(overlay);
+    resultCardMounted = true;
   }
 
-  function showOverlayToast(message) {
+  function mountToast(message, ttl) {
+    const root = ensureOverlayRoot();
     const toast = document.createElement('div');
     toast.style.cssText = `
       position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
       background: #12121a; color: #fff; padding: 10px 16px; border-radius: 8px;
       font-family: Inter, system-ui, sans-serif; font-size: 13px; font-weight: 500;
-      z-index: 2147483647; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: auto;
     `;
     toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
+    root.appendChild(toast);
+    setTimeout(() => dismissOverlayNode(toast), ttl);
+  }
+
+  function showOverlayToast(message) {
+    mountToast(message, 2500);
   }
 
   function showToast(message) {
-    let toast = document.createElement('div');
-    toast.style.cssText = `
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: #12121a; color: white; padding: 10px 16px;
-      border-radius: 8px; font-family: system-ui; font-size: 13px;
-      font-weight: 500; z-index: 2147483647; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    `;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    mountToast(message, 3000);
   }
 
   function sleep(ms) {

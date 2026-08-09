@@ -1,3 +1,21 @@
+// Wire-protocol action strings are duplicated per file; keep spellings consistent with §0 of the plan.
+const ROLE = 'popup';
+const ROLE_SW = 'sw';
+const ACTION_GET_RECORDING_STATE = 'GET_RECORDING_STATE';
+const ACTION_STOP_RECORDING_TRIGGER = 'STOP_RECORDING_TRIGGER';
+const ACTION_RECORDING_BUSY = 'RECORDING_BUSY';
+const ACTION_RECORDING_ERROR = 'RECORDING_ERROR';
+
+// Machine-readable error codes the service worker may answer a capture with.
+const ERROR_MESSAGES = {
+  save_failed: 'The capture could not be saved to local storage. Please try again.',
+};
+
+const STATE_IDLE = 'idle';
+const STATE_STARTING = 'starting';
+const STATE_RECORDING = 'recording';
+const STATE_STOPPING = 'stopping';
+
 document.addEventListener('DOMContentLoaded', () => {
   // Views
   const mainView = document.getElementById('mainView');
@@ -9,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCaptureSelected = document.getElementById('btnCaptureSelected');
   const btnCaptureFull = document.getElementById('btnCaptureFull');
   const btnStartRecord = document.getElementById('btnStartRecord');
+  const btnStopRecord = document.getElementById('btnStopRecord');
   const btnOpenEditor = document.getElementById('openEditorHome');
   const btnViewHistory = document.getElementById('viewHistoryBtn');
   const toggleMic = document.getElementById('toggleMic');
@@ -36,18 +55,23 @@ document.addEventListener('DOMContentLoaded', () => {
   let capturedImageId = null;
   let capturedVideoBlob = null;
   let capturedVideoId = null;
+  // Exactly one countdown ticker and one state poll exist at any time. The
+  // countdown is NEVER torn down by the poll (that re-sync caused the visible
+  // 1s jitter, N-7); it only re-derives its end time from the session.
   let recordInterval = null;
+  let statePoll = null;
+  let countdownEndsAt = 0;
+  let currentRecordingState = STATE_IDLE;
 
   // Load preferences
-  chrome.storage.local.get(['micEnabled', 'recordDuration', 'captureDelay', 'recordingActive'], (res) => {
+  chrome.storage.local.get(['micEnabled', 'recordDuration', 'captureDelay'], res => {
     if (res.micEnabled !== undefined) toggleMic.checked = res.micEnabled;
     if (res.recordDuration) recordLimit.value = res.recordDuration;
     if (res.captureDelay) delaySelect.value = res.captureDelay;
-    // Restore recording UI if a recording is still in progress
-    if (res.recordingActive) {
-      setRecordingState(true, parseInt(recordLimit.value, 10) || 30);
-    }
   });
+
+  // The service worker owns the session state; ask it, never guess.
+  refreshRecordingState();
 
   // Save preferences
   toggleMic.addEventListener('change', () => {
@@ -64,9 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Push messages from the background (only used for the async flows:
   // video result + recording errors/cancels).
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener(msg => {
+    if (!msg || typeof msg.action !== 'string') return;
+    if (msg.target && msg.target !== ROLE) return; // §0 target discipline
+
     if (msg.action === 'CAPTURE_VIDEO_RESULT' && msg.id) {
-      setRecordingState(false);
+      renderRecordingState({ state: STATE_IDLE });
       loadVideoCaptureById(msg.id).then(blob => {
         if (blob) {
           capturedVideoBlob = blob;
@@ -78,24 +105,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    if (msg.action === 'RECORDING_ERROR') {
-      setRecordingState(false);
+    if (msg.action === ACTION_RECORDING_ERROR) {
+      renderRecordingState({ state: STATE_IDLE });
       showToast('Recording failed: ' + (msg.error || 'unknown error'));
     }
 
     if (msg.action === 'RECORDING_CANCELLED') {
-      setRecordingState(false);
+      renderRecordingState({ state: STATE_IDLE });
       showToast('Recording cancelled');
+    }
+
+    // Informational only — a busy recorder is never a failure.
+    if (msg.action === ACTION_RECORDING_BUSY) {
+      showToast(msg.info || 'A recording is already in progress.');
+      refreshRecordingState();
     }
   });
 
   // Capture functions
-  const triggerCapture = (actionType) => {
+  const triggerCapture = actionType => {
     const delay = parseInt(delaySelect.value, 10);
 
     const execute = () => {
       showMainStatus('Capturing...');
-      chrome.runtime.sendMessage({ action: actionType }, (res) => {
+      chrome.runtime.sendMessage({ action: actionType }, res => {
         if (res && res.dataUrl) {
           capturedImageDataUrl = res.dataUrl;
           capturedImageId = res.id;
@@ -104,8 +137,17 @@ document.addEventListener('DOMContentLoaded', () => {
           showPreview('image');
           setStatus(statusBar, 'Captured! Download, copy, or share.', 'success');
         } else if (res && res.error) {
-          showMainStatus(res.error, 'error');
-          showToast(res.error);
+          const message = ERROR_MESSAGES[res.error] || res.error;
+          showMainStatus(message, 'error');
+          showToast(message);
+        } else {
+          // No response at all (service worker died, channel closed, or the
+          // handler returned nothing). Never leave "Capturing..." on screen.
+          const message =
+            (chrome.runtime.lastError && chrome.runtime.lastError.message) ||
+            'The capture did not complete. Please try again.';
+          showMainStatus(message, 'error');
+          showToast(message);
         }
       });
     };
@@ -115,12 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // close the moment the user clicks/drags on the page; the result is shown
       // in-page afterwards.
       showMainStatus('Drag to select an area on the page.');
-      chrome.runtime.sendMessage({ action: 'CAPTURE_SELECTED' });
+      // Fire-and-forget: the service worker answers nothing, so the promise
+      // must be caught or it surfaces as an unhandled rejection.
+      chrome.runtime.sendMessage({ action: 'CAPTURE_SELECTED' }).catch(() => {});
       return;
     }
 
     if (delay > 0) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
         if (!tabs[0]) return;
         // Content script runs the countdown and replies when done
         chrome.tabs.sendMessage(tabs[0].id, { action: 'START_COUNTDOWN', delay }, () => {
@@ -144,42 +188,161 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isNaN(duration) || duration < 10) duration = 30;
     if (duration > 30) duration = 30;
 
-    chrome.runtime.sendMessage({ action: 'START_RECORDING', duration, mic: toggleMic.checked });
-    setRecordingState(true, duration);
+    // The popup (a chrome-extension:// RenderFrameHost) OWNS the native picker.
+    // chooseDesktopMedia() called from the service worker hard-errors without a
+    // targetTab, and WITH a targetTab the stream is origin-locked to that tab so
+    // the offscreen document could never consume it. Called here WITHOUT a
+    // targetTab the stream is bound to the extension origin, so the offscreen
+    // document's getUserMedia({ chromeMediaSourceId: streamId }) succeeds (N-11).
+    renderRecordingState({ state: STATE_STARTING, duration });
+    btnStartRecord.innerHTML = 'Selecting source...';
+
+    chrome.desktopCapture.chooseDesktopMedia(
+      ['screen', 'window', 'tab', 'audio'],
+      (streamId, pickerOptions) => {
+        if (!streamId) {
+          // The user dismissed the picker without choosing a source.
+          renderRecordingState({ state: STATE_IDLE });
+          showToast('Recording cancelled');
+          return;
+        }
+
+        const canRequestAudioTrack = !!(pickerOptions && pickerOptions.canRequestAudioTrack);
+        // Fire-and-forget: START_RECORDING is answered by push messages, not by a
+        // response, so the promise must be caught (unhandled rejection otherwise).
+        chrome.runtime
+          .sendMessage({
+            action: 'START_RECORDING',
+            target: ROLE_SW,
+            streamId,
+            canRequestAudioTrack,
+            duration,
+            mic: toggleMic.checked,
+          })
+          .catch(() => {});
+      }
+    );
   });
 
-  function setRecordingState(active, duration) {
-    if (active) {
-      btnStartRecord.disabled = true;
-      btnStartRecord.style.opacity = '0.6';
-      btnStartRecord.innerHTML = 'Recording...';
-      captureStatus.style.display = 'block';
-      captureStatus.className = 'status-bar';
+  // Stop is the PRIMARY control (the in-page badge is best effort only).
+  // It is idempotent and force-closing: the service worker closes the offscreen
+  // document even when no recorder exists.
+  btnStopRecord.addEventListener('click', () => {
+    if (currentRecordingState === STATE_STOPPING) return;
+    chrome.runtime
+      .sendMessage({
+        action: ACTION_STOP_RECORDING_TRIGGER,
+        target: ROLE_SW,
+        source: 'popup',
+      })
+      .catch(() => {});
+    renderRecordingState({ state: STATE_STOPPING });
+    setTimeout(refreshRecordingState, 1000);
+  });
 
-      let remaining = duration;
-      captureStatus.textContent = `Recording in progress... (${remaining}s) - watch the badge on the page`;
+  function refreshRecordingState() {
+    chrome.runtime.sendMessage({ action: ACTION_GET_RECORDING_STATE, target: ROLE_SW }, res => {
+      if (chrome.runtime.lastError || !res) {
+        renderRecordingState({ state: STATE_IDLE });
+        return;
+      }
+      renderRecordingState(res);
+    });
+  }
 
-      if (recordInterval) clearInterval(recordInterval);
-      recordInterval = setInterval(() => {
-        remaining--;
-        if (remaining >= 0) {
-          captureStatus.textContent = `Recording in progress... (${remaining}s) - watch the badge on the page`;
-        }
-      }, 1000);
-    } else {
-      if (recordInterval) clearInterval(recordInterval);
-      recordInterval = null;
-      btnStartRecord.disabled = false;
-      btnStartRecord.style.opacity = '1';
-      btnStartRecord.innerHTML = `
+  const START_BUTTON_HTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="12" r="10"/>
         </svg>
         Start Recording
       `;
+
+  function renderCountdown() {
+    if (currentRecordingState !== STATE_RECORDING) return;
+    const remaining = Math.max(0, Math.ceil((countdownEndsAt - Date.now()) / 1000));
+    captureStatus.textContent = `Recording in progress... (${remaining}s) - press Stop or use the page badge`;
+  }
+
+  function startCountdown() {
+    if (recordInterval) return; // already ticking — never restart it
+    recordInterval = setInterval(renderCountdown, 1000);
+  }
+
+  function stopCountdown() {
+    if (recordInterval) {
+      clearInterval(recordInterval);
+      recordInterval = null;
+    }
+    countdownEndsAt = 0;
+  }
+
+  function startStatePoll() {
+    if (statePoll) return; // exactly one poll
+    statePoll = setInterval(refreshRecordingState, 2000);
+  }
+
+  function stopStatePoll() {
+    if (statePoll) {
+      clearInterval(statePoll);
+      statePoll = null;
+    }
+  }
+
+  function renderRecordingState(view) {
+    const state = (view && view.state) || STATE_IDLE;
+    currentRecordingState = state;
+
+    if (state === STATE_IDLE) {
+      stopCountdown();
+      stopStatePoll();
+      btnStartRecord.disabled = false;
+      btnStartRecord.style.opacity = '1';
+      btnStartRecord.innerHTML = START_BUTTON_HTML;
+      btnStopRecord.style.display = 'none';
+      btnStopRecord.disabled = false;
+      btnStopRecord.style.opacity = '1';
       captureStatus.style.display = 'none';
       captureStatus.textContent = '';
+      return;
     }
+
+    btnStartRecord.disabled = true;
+    btnStartRecord.style.opacity = '0.6';
+    btnStopRecord.style.display = 'flex';
+    captureStatus.style.display = 'block';
+    captureStatus.className = 'status-bar';
+
+    if (state === STATE_STARTING) {
+      stopCountdown();
+      btnStartRecord.innerHTML = 'Starting...';
+      btnStopRecord.disabled = false;
+      btnStopRecord.style.opacity = '1';
+      captureStatus.textContent = 'Choose what to share in the Chrome picker...';
+    } else if (state === STATE_RECORDING) {
+      btnStartRecord.innerHTML = 'Recording...';
+      btnStopRecord.disabled = false;
+      btnStopRecord.style.opacity = '1';
+
+      // Re-derive the end time from the authoritative session on every poll,
+      // but leave the ticker itself running.
+      const duration = view.duration || parseInt(recordLimit.value, 10) || 30;
+      if (view.startedAt) {
+        countdownEndsAt = view.startedAt + duration * 1000;
+      } else if (!countdownEndsAt) {
+        countdownEndsAt = Date.now() + duration * 1000;
+      }
+      renderCountdown();
+      startCountdown();
+    } else if (state === STATE_STOPPING) {
+      stopCountdown();
+      btnStartRecord.innerHTML = 'Recording...';
+      btnStopRecord.disabled = true;
+      btnStopRecord.style.opacity = '0.6';
+      captureStatus.textContent = 'Finishing your recording...';
+    }
+
+    // Keep the popup honest about terminal transitions it did not observe.
+    startStatePoll();
   }
 
   // Open editor / history
@@ -215,9 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const blob = await response.blob();
 
       if (navigator.clipboard && navigator.clipboard.write) {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         setStatus(statusBar, 'Copied to clipboard!', 'success');
         quickCopy.classList.add('success');
         setTimeout(() => quickCopy.classList.remove('success'), 2000);
@@ -241,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await navigator.share({
           files: [file],
           title: 'SnapCap Capture',
-          text: 'Check out my capture!'
+          text: 'Check out my capture!',
         });
         setStatus(statusBar, 'Shared!', 'success');
       } else {
@@ -278,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await navigator.share({
           files: [file],
           title: 'SnapCap Recording',
-          text: 'Check out my recording!'
+          text: 'Check out my recording!',
         });
         setStatus(statusBarVideo, 'Shared!', 'success');
       } else {
@@ -307,11 +468,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Edit opens the editor for the capture already saved by the background
   editBtn.addEventListener('click', () => {
     if (capturedImageId) {
-      chrome.tabs.create({ url: chrome.runtime.getURL(`editor/editor.html?mode=image&id=${capturedImageId}`) });
+      chrome.tabs.create({
+        url: chrome.runtime.getURL(`editor/editor.html?mode=image&id=${capturedImageId}`),
+      });
       window.close();
     } else if (capturedImageDataUrl) {
-      saveToIndexedDB(capturedImageDataUrl, 'image', (id) => {
-        chrome.tabs.create({ url: chrome.runtime.getURL(`editor/editor.html?mode=image&id=${id}`) });
+      saveToIndexedDB(capturedImageDataUrl, 'image', id => {
+        chrome.tabs.create({
+          url: chrome.runtime.getURL(`editor/editor.html?mode=image&id=${id}`),
+        });
         window.close();
       });
     }
@@ -319,7 +484,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   editBtnVideo.addEventListener('click', () => {
     if (capturedVideoId) {
-      chrome.tabs.create({ url: chrome.runtime.getURL(`editor/editor.html?mode=video&id=${capturedVideoId}`) });
+      chrome.tabs.create({
+        url: chrome.runtime.getURL(`editor/editor.html?mode=video&id=${capturedVideoId}`),
+      });
       window.close();
     }
   });
@@ -377,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function openDB() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('SnapCapDB', 1);
-      request.onupgradeneeded = (e) => {
+      request.onupgradeneeded = e => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('captures')) {
           db.createObjectStore('captures', { keyPath: 'id' });
@@ -405,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveToIndexedDB(dataUrl, type, callback) {
-    openDB().then((db) => {
+    openDB().then(db => {
       const tx = db.transaction('captures', 'readwrite');
       const store = tx.objectStore('captures');
       const id = type + '_' + crypto.randomUUID();
@@ -414,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
         id,
         type,
         dataUrl,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       tx.oncomplete = () => callback(id);

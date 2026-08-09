@@ -1,0 +1,41 @@
+// H12 RESOLVED: the shipped extension has no Firebase client SDK, so deny-all client writes is safe, not a regression.
+//
+// All writes are performed server-side by the backend Firebase Admin SDK, which
+// bypasses these rules entirely. Clients therefore only ever need owner-scoped
+// READ access; every write path is denied.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default: deny everything not explicitly allowed below.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User profile. Written exclusively by the server (`POST /auth/sync`).
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Captures. Created/updated/deleted exclusively by the backend Admin SDK.
+    match /captures/{id} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow write: if false;
+    }
+
+    // Subscription state. Server-owned; a client must never be able to grant itself a plan.
+    match /subscriptions/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Account-deletion records. Server-owned audit trail.
+    match /deletions/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}

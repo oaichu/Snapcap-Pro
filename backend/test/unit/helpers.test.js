@@ -12,7 +12,7 @@ import {
   isValidDataUrl,
   calculateStorageUsed,
   isExpired,
-  getRemainingDays
+  getRemainingDays,
 } from '../../src/utils/helpers.js';
 
 describe('Helpers Utility Functions', () => {
@@ -20,7 +20,7 @@ describe('Helpers Utility Functions', () => {
     test('should generate a unique string ID', () => {
       const id1 = generateId();
       const id2 = generateId();
-      
+
       assert.ok(typeof id1 === 'string');
       assert.ok(typeof id2 === 'string');
       assert.notEqual(id1, id2);
@@ -30,7 +30,7 @@ describe('Helpers Utility Functions', () => {
   describe('getCurrentTimestamp', () => {
     test('should return a valid ISO date string', () => {
       const timestamp = getCurrentTimestamp();
-      
+
       assert.ok(typeof timestamp === 'string');
       assert.doesNotThrow(() => new Date(timestamp).toISOString());
     });
@@ -41,8 +41,11 @@ describe('Helpers Utility Functions', () => {
       const baseDate = new Date('2024-01-01');
       const result = addDays(baseDate, 5);
       const expectedDate = new Date('2024-01-06');
-      
-      assert.equal(new Date(result).toISOString().split('T')[0], expectedDate.toISOString().split('T')[0]);
+
+      assert.equal(
+        new Date(result).toISOString().split('T')[0],
+        expectedDate.toISOString().split('T')[0]
+      );
     });
   });
 
@@ -96,12 +99,8 @@ describe('Helpers Utility Functions', () => {
 
   describe('calculateStorageUsed', () => {
     test('should calculate total storage from captures', () => {
-      const captures = [
-        { sizeMB: 1.5 },
-        { sizeMB: 2.3 },
-        { sizeMB: 0.8 }
-      ];
-      
+      const captures = [{ sizeMB: 1.5 }, { sizeMB: 2.3 }, { sizeMB: 0.8 }];
+
       assert.equal(calculateStorageUsed(captures), 4.6);
     });
 
@@ -114,7 +113,7 @@ describe('Helpers Utility Functions', () => {
     test('should check if date is expired', () => {
       const pastDate = new Date(Date.now() - 86400000).toISOString();
       const futureDate = new Date(Date.now() + 86400000).toISOString();
-      
+
       assert.equal(isExpired(pastDate), true);
       assert.equal(isExpired(futureDate), false);
     });
@@ -124,7 +123,7 @@ describe('Helpers Utility Functions', () => {
     test('should calculate remaining days correctly', () => {
       const futureDate = new Date(Date.now() + 5 * 86400000).toISOString();
       const pastDate = new Date(Date.now() - 86400000).toISOString();
-      
+
       assert.equal(getRemainingDays(futureDate), 5);
       assert.equal(getRemainingDays(pastDate), 0);
     });

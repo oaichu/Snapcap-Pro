@@ -63,29 +63,34 @@ npm start
 ## API Endpoints
 
 ### Authentication
+
 - `GET /api/auth/me` - Get current user profile
 - `POST /api/auth/sync` - Sync user data
 - `DELETE /api/auth/me` - Delete user account
 
 ### Captures
+
 - `GET /api/captures` - List user captures
 - `GET /api/captures/:id` - Get capture details
 - `DELETE /api/captures/:id` - Delete capture
 - `GET /api/captures/stats/summary` - Get capture statistics
 
 ### Upload
+
 - `POST /api/upload/image` - Upload image capture
 - `POST /api/upload/video` - Upload video capture
 
 ### Subscription
+
 - `GET /api/subscription` - Get subscription details
-- `POST /api/subscription/upgrade` - Upgrade to Pro
+- `POST /api/subscription/upgrade` - Disabled. SnapCap is 100% free; there is no paid tier to upgrade to.
 - `POST /api/subscription/cancel` - Cancel subscription
 - `GET /api/subscription/features` - Get available features
 
 ## Firestore Collections
 
 ### Users
+
 ```
 users/{uid} {
   uid: string
@@ -101,6 +106,7 @@ users/{uid} {
 ```
 
 ### Captures
+
 ```
 captures/{id} {
   userId: string
@@ -113,6 +119,7 @@ captures/{id} {
 ```
 
 ### Subscriptions
+
 ```
 subscriptions/{id} {
   userId: string

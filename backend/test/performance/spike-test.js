@@ -20,7 +20,7 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 export default function () {
   const healthRes = http.get(`${BASE_URL}/api/health`);
   check(healthRes, {
-    'health status is 200': (r) => r.status === 200,
+    'health status is 200': r => r.status === 200,
   });
 
   sleep(0.2);

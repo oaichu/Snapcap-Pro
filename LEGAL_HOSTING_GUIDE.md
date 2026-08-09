@@ -1,16 +1,18 @@
 # Legal Document Hosting Guide for SnapCap
 
 ## Overview
-This guide covers hosting your legal documents (Terms of Service, Privacy Policy, DPA) for Chrome Web Store compliance and legal compliance.
+
+This guide covers hosting your legal documents (Terms of Service, Privacy Policy) for Chrome Web Store compliance and legal compliance.
 
 ## Requirements
+
 - **Privacy Policy URL** - REQUIRED by Chrome Web Store
 - **Terms of Service URL** - REQUIRED for commercial use
-- **DPA URL** - REQUIRED for B2B/GDPR compliance
 
 ## Option 1: Static Site Hosting (Recommended)
 
 ### Option 1a: GitHub Pages (Free)
+
 ```bash
 # 1. Create a new repo: snapcap-legal
 # 2. Add legal documents
@@ -18,10 +20,10 @@ This guide covers hosting your legal documents (Terms of Service, Privacy Policy
 # 4. URLs will be:
 #    https://yourusername.github.io/snapcap-legal/terms.html
 #    https://yourusername.github.io/snapcap-legal/privacy.html
-#    https://yourusername.github.io/snapcap-legal/dpa.html
 ```
 
 ### Option 1b: Netlify (Free)
+
 ```bash
 # 1. Connect GitHub repo to Netlify
 # 2. Build command: none (static)
@@ -30,6 +32,7 @@ This guide covers hosting your legal documents (Terms of Service, Privacy Policy
 ```
 
 ### Option 1c: Vercel (Free)
+
 ```bash
 # 1. Connect GitHub repo to Vercel
 # 2. Framework: Other
@@ -37,6 +40,7 @@ This guide covers hosting your legal documents (Terms of Service, Privacy Policy
 ```
 
 ### Option 1d: Firebase Hosting (If using Firebase)
+
 ```bash
 # In your Firebase project:
 firebase init hosting
@@ -47,11 +51,11 @@ firebase deploy --only hosting
 ## Option 2: Your Main Website
 
 If you have a marketing site (snapcap.com):
+
 ```
 /legal/
   ├── terms.html
-  ├── privacy.html
-  └── dpa.html
+  └── privacy.html
 ```
 
 ## Required HTML Structure
@@ -61,57 +65,65 @@ Each legal page must have:
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Terms of Service - SnapCap</title>
-    <meta name="description" content="SnapCap Terms of Service">
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+    <meta name="description" content="SnapCap Terms of Service" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
     <header>
-        <nav>
-            <a href="/">SnapCap</a>
-            <a href="/terms.html">Terms</a>
-            <a href="/privacy.html">Privacy</a>
-            <a href="/dpa.html">DPA</a>
-        </nav>
+      <nav>
+        <a href="/">SnapCap</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/privacy.html">Privacy</a>
+      </nav>
     </header>
     <main>
-        <article>
-            <h1>Terms of Service</h1>
-            <p class="last-updated">Last Updated: January 15, 2025</p>
-            <!-- Content here -->
-        </article>
+      <article>
+        <h1>Terms of Service</h1>
+        <p class="last-updated">Last Updated: January 15, 2025</p>
+        <!-- Content here -->
+      </article>
     </main>
     <footer>
-        <p>&copy; 2025 SnapCap. All rights reserved.</p>
-        <p><a href="mailto:legal@snapcap.com">Contact Legal</a></p>
+      <p>&copy; 2025 SnapCap. All rights reserved.</p>
+      <p><a href="mailto:legal@snapcap.com">Contact Legal</a></p>
     </footer>
-</body>
+  </body>
 </html>
 ```
 
 ## SEO & Accessibility
 
 ### Meta Tags (Required)
+
 ```html
-<meta name="robots" content="index, follow">
-<meta name="description" content="SnapCap Terms of Service - Screenshot & Screen Recorder Extension">
-<link rel="canonical" href="https://legal.snapcap.com/terms.html">
+<meta name="robots" content="index, follow" />
+<meta
+  name="description"
+  content="SnapCap Terms of Service - Screenshot & Screen Recorder Extension"
+/>
+<link rel="canonical" href="https://legal.snapcap.com/terms.html" />
 ```
 
 ### Open Graph (For social sharing)
+
 ```html
-<meta property="og:title" content="Terms of Service - SnapCap">
-<meta property="og:description" content="Terms of Service for SnapCap Screenshot & Screen Recorder Extension">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://legal.snapcap.com/terms.html">
+<meta property="og:title" content="Terms of Service - SnapCap" />
+<meta
+  property="og:description"
+  content="Terms of Service for SnapCap Screenshot & Screen Recorder Extension"
+/>
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://legal.snapcap.com/terms.html" />
 ```
 
 ## Deployment Checklist
 
 ### Pre-deployment
+
 - [ ] Convert Markdown to HTML
 - [ ] Add CSS styling
 - [ ] Add navigation between pages
@@ -121,6 +133,7 @@ Each legal page must have:
 - [ ] Verify all links work
 
 ### DNS Configuration
+
 ```
 # For custom domain legal.snapcap.com
 CNAME legal.snapcap.com → your-hosting-provider.netlify.app
@@ -129,11 +142,13 @@ CNAME legal.snapcap.com → yourusername.github.io
 ```
 
 ### SSL Certificate
+
 - Enable HTTPS (required)
 - Most hosts provide free Let's Encrypt
 - Force HTTPS redirect
 
 ### robots.txt
+
 ```
 User-agent: *
 Allow: /
@@ -141,6 +156,7 @@ Sitemap: https://legal.snapcap.com/sitemap.xml
 ```
 
 ### sitemap.xml
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -154,10 +170,6 @@ Sitemap: https://legal.snapcap.com/sitemap.xml
   </url>
   <url>
     <loc>https://legal.snapcap.com/privacy.html</loc>
-    <lastmod>2025-01-15</lastmod>
-  </url>
-  <url>
-    <loc>https://legal.snapcap.com/dpa.html</loc>
     <lastmod>2025-01-15</lastmod>
   </url>
 </urlset>
@@ -188,10 +200,12 @@ Update your extension manifest and store listing:
 ## Monitoring
 
 ### Uptime Monitoring
+
 - UptimeRobot (free): Monitor legal.snapcap.com
 - Alert on downtime > 5 minutes
 
 ### Analytics
+
 - Google Analytics / Plausible
 - Track page views
 - Monitor for errors
@@ -199,33 +213,34 @@ Update your extension manifest and store listing:
 ## Version Control
 
 ### Git History
+
 ```bash
 git log --oneline --legal/
 # Track all changes to legal docs
 ```
 
 ### Change Log
+
 ```
 ## Legal Documents Changelog
 
 ### v1.0.0 (2025-01-15)
 - Initial release of Terms of Service
 - Initial release of Privacy Policy
-- Initial release of DPA
 
 ### v1.1.0 (2025-02-01)
-- Updated Privacy Policy: Added Stripe data processing
-- Updated Terms: Clarified refund policy
+- Updated Terms & Privacy Policy: SnapCap is free of charge; removed all
+  payment-processor and paid-tier wording
 ```
 
 ## Legal Review Checklist
 
 Before publishing:
+
 - [ ] Reviewed by attorney
 - [ ] GDPR compliance verified
 - [ ] CCPA compliance verified
-- [ ] Stripe data processing disclosed
-- [ ] Firebase data processing disclosed
+- [ ] Firebase data processing disclosed (optional self-hosted backend only)
 - [ ] Cookie policy included
 - [ ] Age restrictions specified (16+)
 - [ ] Jurisdiction specified
@@ -235,17 +250,19 @@ Before publishing:
 ## Emergency Updates
 
 ### Process for urgent legal changes:
+
 1. Make changes in Git
 2. Legal review (expedited)
 3. Deploy to staging
 4. Legal sign-off
 5. Deploy to production
-5. Notify users (if material change)
-6. Update version number
+6. Notify users (if material change)
+7. Update version number
 
 ## Contact
 
 For legal document updates:
+
 - Email: legal@snapcap.com
 - GitHub: snapcap/legal
 - Slack: #legal-updates

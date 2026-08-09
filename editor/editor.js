@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const panels = {
     image: document.getElementById('panelImage'),
     video: document.getElementById('panelVideo'),
-    history: document.getElementById('panelHistory')
+    history: document.getElementById('panelHistory'),
   };
   const tools = document.querySelectorAll('.tool[data-tool]');
   const colors = document.querySelectorAll('.color');
@@ -32,7 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentColor = '#ef4444';
   let currentSize = 4;
   let isDrawing = false;
-  let startX = 0, startY = 0;
+  let startX = 0,
+    startY = 0;
   let snapshot = null;
   let currentVideoBlob = null;
   const undoStack = [];
@@ -57,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function switchTab(mode, id = null, preserveCanvas = false) {
     currentMode = mode;
-    
+
     tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === mode));
     Object.entries(panels).forEach(([key, panel]) => {
       panel.classList.toggle('active', key === mode);
@@ -187,8 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ctx.beginPath();
     ctx.moveTo(toX, toY);
-    ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6), toY - headLen * Math.sin(angle - Math.PI / 6));
-    ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6), toY - headLen * Math.sin(angle + Math.PI / 6));
+    ctx.lineTo(
+      toX - headLen * Math.cos(angle - Math.PI / 6),
+      toY - headLen * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.lineTo(
+      toX - headLen * Math.cos(angle + Math.PI / 6),
+      toY - headLen * Math.sin(angle + Math.PI / 6)
+    );
     ctx.closePath();
     ctx.fill();
   }
@@ -237,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideTextModal();
   });
 
-  textInput.addEventListener('keydown', (e) => {
+  textInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       textConfirm.click();
@@ -287,16 +294,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Copy
   btnCopy.addEventListener('click', () => {
     if (currentMode !== 'image') return;
-    
-    canvas.toBlob((blob) => {
+
+    canvas.toBlob(blob => {
       if (blob && navigator.clipboard && navigator.clipboard.write) {
-        navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]).then(() => {
-          showNotification('Copied to clipboard!');
-        }).catch(() => {
-          showNotification('Failed to copy');
-        });
+        navigator.clipboard
+          .write([new ClipboardItem({ 'image/png': blob })])
+          .then(() => {
+            showNotification('Copied to clipboard!');
+          })
+          .catch(() => {
+            showNotification('Failed to copy');
+          });
       }
     });
   });
@@ -304,19 +312,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Share
   btnShare.addEventListener('click', async () => {
     try {
-      let shareData = {
+      const shareData = {
         title: 'SnapCap Capture',
-        text: 'Check out my capture!'
+        text: 'Check out my capture!',
       };
 
       if (currentMode === 'image') {
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-        if (blob && navigator.canShare?.({ files: [new File([blob], 'capture.png', { type: 'image/png' })] })) {
+        if (
+          blob &&
+          navigator.canShare?.({ files: [new File([blob], 'capture.png', { type: 'image/png' })] })
+        ) {
           shareData.files = [new File([blob], 'capture.png', { type: 'image/png' })];
         }
       } else if (currentMode === 'video' && currentVideoBlob) {
-        if (navigator.canShare?.({ files: [new File([currentVideoBlob], 'recording.webm', { type: 'video/webm' })] })) {
-          shareData.files = [new File([currentVideoBlob], 'recording.webm', { type: 'video/webm' })];
+        if (
+          navigator.canShare?.({
+            files: [new File([currentVideoBlob], 'recording.webm', { type: 'video/webm' })],
+          })
+        ) {
+          shareData.files = [
+            new File([currentVideoBlob], 'recording.webm', { type: 'video/webm' }),
+          ];
         }
       }
 
@@ -335,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Capture video frame
   btnCaptureFrame.addEventListener('click', () => {
     if (!playerVideo || playerVideo.readyState < 2) return;
-    
+
     canvas.width = playerVideo.videoWidth;
     canvas.height = playerVideo.videoHeight;
     ctx.drawImage(playerVideo, 0, 0, canvas.width, canvas.height);
@@ -350,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tx = db.transaction('captures', 'readonly');
       const store = tx.objectStore('captures');
       const idToLoad = targetId || new URLSearchParams(window.location.search).get('id');
-      
+
       const req = idToLoad ? store.get(idToLoad) : store.getAll();
 
       req.onsuccess = () => {
@@ -367,7 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
           img.onload = () => {
             const maxSize = 4000;
             const maxMP = 16;
-            let w = img.width, h = img.height;
+            let w = img.width,
+              h = img.height;
 
             if (w > maxSize || h > maxSize) {
               const scale = Math.min(maxSize / w, maxSize / h);
@@ -412,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tx = db.transaction('captures', 'readonly');
       const store = tx.objectStore('captures');
       const idToLoad = targetId || new URLSearchParams(window.location.search).get('id');
-      
+
       const req = idToLoad ? store.get(idToLoad) : store.getAll();
 
       req.onsuccess = () => {
@@ -437,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load history
   async function loadHistory() {
     historyGrid.innerHTML = '<p style="color:var(--text-secondary)">Loading...</p>';
-    
+
     try {
       const db = await openDB();
       const tx = db.transaction('captures', 'readonly');
@@ -453,30 +471,32 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        items.sort((a, b) => b.timestamp - a.timestamp).forEach(item => {
-          const card = document.createElement('div');
-          card.className = 'history-card';
+        items
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'history-card';
 
-          if (item.type === 'video' && item.blob) {
-            const video = document.createElement('video');
-            video.src = URL.createObjectURL(item.blob);
-            video.muted = true;
-            card.appendChild(video);
-          } else if (item.dataUrl) {
-            const img = document.createElement('img');
-            img.src = item.dataUrl;
-            card.appendChild(img);
-          }
+            if (item.type === 'video' && item.blob) {
+              const video = document.createElement('video');
+              video.src = URL.createObjectURL(item.blob);
+              video.muted = true;
+              card.appendChild(video);
+            } else if (item.dataUrl) {
+              const img = document.createElement('img');
+              img.src = item.dataUrl;
+              card.appendChild(img);
+            }
 
-          const info = document.createElement('div');
-          info.className = 'history-card-info';
-          info.innerHTML = `
+            const info = document.createElement('div');
+            info.className = 'history-card-info';
+            info.innerHTML = `
             <span class="history-card-type">${item.type.toUpperCase()}</span>
             <span>${new Date(item.timestamp).toLocaleDateString()}</span>
           `;
-          card.appendChild(info);
-          historyGrid.appendChild(card);
-        });
+            card.appendChild(info);
+            historyGrid.appendChild(card);
+          });
       };
     } catch (e) {
       historyGrid.innerHTML = '<p style="color:var(--text-secondary)">Error loading history</p>';
@@ -487,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function openDB() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('SnapCapDB', 1);
-      request.onupgradeneeded = (e) => {
+      request.onupgradeneeded = e => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('captures')) {
           db.createObjectStore('captures', { keyPath: 'id' });

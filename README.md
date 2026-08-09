@@ -13,25 +13,28 @@ Existing web store extensions are often bloated, closed-source, or lock essentia
 ## 🌟 Key Features
 
 ### 📸 Screenshot Tools
-* **Visible Area Capture**: Instant 1-click snapshot of your active browser window.
-* **Crop Region Selection**: Interactive drag-and-drop crop box with live pixel dimension badge.
-* **Full Page Auto-Scroll**: Automatically scrolls down long web pages and stitches snapshots into a pixel-perfect image.
-* **Delay Timer**: Configurable 3s/5s countdown timer before capturing.
+
+- **Visible Area Capture**: Instant 1-click snapshot of your active browser window.
+- **Crop Region Selection**: Interactive drag-and-drop crop box with live pixel dimension badge.
+- **Full Page Auto-Scroll**: Automatically scrolls down long web pages and stitches snapshots into a pixel-perfect image.
+- **Delay Timer**: Configurable 3s/5s countdown timer before capturing.
 
 ### 🎥 30-Second Screen Recorder
-* **Short Clip Recording**: Max 30s timer designed specifically for fast bug reporting, demo clips, and social shares.
-* **Microphone & Audio Support**: Toggle mic input alongside system/tab audio.
-* **Live In-Page Badge**: Floating status badge with real-time countdown timer (`🔴 Rec 00:24 / 00:30`) and Stop button.
-* **Video Frame Extraction**: Single-click to capture any video frame directly into the Image Editor for instant annotation!
+
+- **Short Clip Recording**: Max 30s timer designed specifically for fast bug reporting, demo clips, and social shares.
+- **Microphone & Audio Support**: Toggle mic input alongside system/tab audio.
+- **Live In-Page Badge**: Floating status badge with real-time countdown timer (`🔴 Rec 00:24 / 00:30`) and Stop button.
+- **Video Frame Extraction**: Single-click to capture any video frame directly into the Image Editor for instant annotation!
 
 ### 🎨 Studio Annotation Suite
-* **Draw / Pencil**: Freehand smooth drawing with customizable stroke sizes.
-* **Shapes**: Vector arrows (`↗️`), Rectangles (`🔲`), Circles (`⭕`).
-* **Typography**: Add custom text overlays directly on screenshots.
-* **Privacy Redaction / Blur (`🌫️`)**: Pixelate sensitive details (passwords, secret keys, emails) before sharing.
-* **Color Palette**: Preset vibrant neon colors + custom Hex color picker.
-* **Undo / Redo History**: Full multi-step undo/redo stack.
-* **Instant Export**: Download as high-res **PNG** / **WebM** or **Copy to Clipboard** with 1 click.
+
+- **Draw / Pencil**: Freehand smooth drawing with customizable stroke sizes.
+- **Shapes**: Vector arrows (`↗️`), Rectangles (`🔲`), Circles (`⭕`).
+- **Typography**: Add custom text overlays directly on screenshots.
+- **Privacy Redaction / Blur (`🌫️`)**: Pixelate sensitive details (passwords, secret keys, emails) before sharing.
+- **Color Palette**: Preset vibrant neon colors + custom Hex color picker.
+- **Undo / Redo History**: Full multi-step undo/redo stack.
+- **Instant Export**: Download as high-res **PNG** / **WebM** or **Copy to Clipboard** with 1 click.
 
 ---
 
@@ -78,12 +81,12 @@ You can test and install SnapCap in any Chromium-based browser (Google Chrome, M
 
 ## ⚡ Performance Benchmark
 
-| Metric | SnapCap | Other Extensions |
-| :--- | :--- | :--- |
-| **Package Size** | **< 800 KB** | 15 MB - 50 MB |
-| **RAM Footprint** | **~15 MB** (Service Worker idle) | 120 MB+ |
-| **Dependencies** | **0 (Pure JS/Canvas)** | 40+ node modules |
-| **Open Source** | **100% MIT License** | Proprietary |
+| Metric            | SnapCap                          | Other Extensions |
+| :---------------- | :------------------------------- | :--------------- |
+| **Package Size**  | **< 800 KB**                     | 15 MB - 50 MB    |
+| **RAM Footprint** | **~15 MB** (Service Worker idle) | 120 MB+          |
+| **Dependencies**  | **0 (Pure JS/Canvas)**           | 40+ node modules |
+| **Open Source**   | **100% MIT License**             | Proprietary      |
 
 ---
 
@@ -95,7 +98,16 @@ Distributed under the **MIT License** (see [LICENSE](LICENSE)).
 
 SnapCap is **completely free for everyone — no paywalls, no locked features.** The "Pro" name is kept purely as a feature label; every feature (full-page capture, screen recording, blur/redaction, cloud sync, priority support) and every generous storage/capture limit is unlocked for all users on the free tier.
 
-- The extension is **offline-first**: screenshots, recording and editing all work locally in your browser with no account and no data leaving your device.
-- An **optional, free backend API** (`backend/`) is provided for those who want cloud sync / storage. It requires a Firebase project (a `serviceAccountKey.json`) and is fully free — no Stripe/payment integration is needed.
+- The extension is **offline-first**: screenshots, recording and editing all run locally in your browser, with no account required and no captures or recordings uploaded anywhere.
+- An **optional, free backend API** (`backend/`) is provided for those who want cloud sync / storage. It requires a Firebase project (a `serviceAccountKey.json`) and is fully free — no payment integration is needed.
+
+### 🔒 Privacy note
+
+The extension UI (`popup.html`, `editor.html`) makes **zero external network requests**: it renders
+with the operating system's native font stack, so no web font (and no CDN) is contacted. The
+manifest CSP no longer allow-lists any font host. **No screenshots, recordings or user content ever
+leave your device** unless you explicitly opt in to the cloud sync backend.
+
+> Resolved in v1.1.0: the Google Fonts (Inter) CDN dependency was removed entirely.
 
 See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the v1.1.0 release summary.

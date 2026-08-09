@@ -35,12 +35,14 @@ e2e/
 ## Test Coverage
 
 ### Popup Tests
+
 - [ ] Popup opens on extension icon click
 - [ ] All capture buttons are visible
 - [ ] Settings are saved correctly
 - [ ] Record button shows duration selector
 
 ### Capture Tests
+
 - [ ] Visible area capture works
 - [ ] Selected region capture works
 - [ ] Full page capture works
@@ -48,6 +50,7 @@ e2e/
 - [ ] Delay timer works correctly
 
 ### Editor Tests
+
 - [ ] Editor opens after capture
 - [ ] Pencil tool draws correctly
 - [ ] Text tool adds text
@@ -61,6 +64,7 @@ e2e/
 - [ ] Copy to clipboard works
 
 ### Recording Tests
+
 - [ ] Recording starts after screen selection
 - [ ] Recording badge shows timer
 - [ ] Recording stops at max duration
@@ -68,6 +72,7 @@ e2e/
 - [ ] Video plays in editor after recording
 
 ### Settings Tests
+
 - [ ] Mic toggle saves preference
 - [ ] Duration selector saves preference
 - [ ] Delay selector saves preference
@@ -85,10 +90,7 @@ describe('Popup', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch({
       headless: false,
-      args: [
-        `--disable-extensions-except=${EXTENSION_PATH}`,
-        `--load-extension=${EXTENSION_PATH}`
-      ]
+      args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`],
     });
   });
 

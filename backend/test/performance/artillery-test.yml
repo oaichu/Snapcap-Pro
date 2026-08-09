@@ -1,51 +1,51 @@
 config:
-  target: "http://localhost:3000"
+  target: 'http://localhost:3000'
   phases:
     - duration: 60
       arrivalRate: 10
-      name: "Warm up"
+      name: 'Warm up'
     - duration: 300
       arrivalRate: 50
-      name: "Sustained load"
+      name: 'Sustained load'
     - duration: 60
       arrivalRate: 100
-      name: "Peak load"
+      name: 'Peak load'
   defaults:
     headers:
-      Content-Type: "application/json"
-  processor: "./artillery-processor.js"
+      Content-Type: 'application/json'
+  processor: './artillery-processor.js'
 
 scenarios:
-  - name: "Health check"
+  - name: 'Health check'
     weight: 20
     flow:
       - get:
-          url: "/api/health"
+          url: '/api/health'
       - think: 1
 
-  - name: "List captures"
+  - name: 'List captures'
     weight: 30
     flow:
       - get:
-          url: "/api/captures"
+          url: '/api/captures'
           capture:
-            json: "$.captures"
-            as: "captures"
+            json: '$.captures'
+            as: 'captures'
       - think: 2
 
-  - name: "Get subscription"
+  - name: 'Get subscription'
     weight: 20
     flow:
       - get:
-          url: "/api/subscription"
+          url: '/api/subscription'
       - think: 1
 
-  - name: "Upload image (simulated)"
+  - name: 'Upload image (simulated)'
     weight: 30
     flow:
       - post:
-          url: "/api/upload/image"
+          url: '/api/upload/image'
           json:
-            dataUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-            type: "image"
+            dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+            type: 'image'
       - think: 3

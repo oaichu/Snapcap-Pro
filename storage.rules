@@ -1,0 +1,25 @@
+// H12 RESOLVED: the shipped extension has no Firebase client SDK, so deny-all client
+// access is safe, not a regression.
+//
+// Uploads go through the backend Firebase Admin SDK (which bypasses these rules).
+// Downloads are served via time-limited signed URLs (which also bypass these rules).
+// Therefore no direct client access to the bucket is ever required.
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Default deny for every object path.
+    match /{allPaths=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // Capture objects: written by the Admin SDK, read via signed URLs only.
+    match /captures/{userId}/{fileName} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

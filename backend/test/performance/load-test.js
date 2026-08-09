@@ -21,8 +21,8 @@ export default function () {
   const healthRes = http.get(`${BASE_URL}/api/health`);
 
   check(healthRes, {
-    'health status is 200': (r) => r.status === 200,
-    'health response time < 200ms': (r) => r.timings.duration < 200,
+    'health status is 200': r => r.status === 200,
+    'health response time < 200ms': r => r.timings.duration < 200,
   });
 
   sleep(1);

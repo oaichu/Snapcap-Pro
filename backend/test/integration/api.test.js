@@ -38,12 +38,12 @@ suite('API Routes', () => {
       health: `${API_BASE_URL}/health`,
       auth: {
         me: `${API_BASE_URL}/auth/me`,
-        sync: `${API_BASE_URL}/auth/sync`
+        sync: `${API_BASE_URL}/auth/sync`,
       },
       captures: {
         list: `${API_BASE_URL}/captures`,
-        detail: `${API_BASE_URL}/captures/123`
-      }
+        detail: `${API_BASE_URL}/captures/123`,
+      },
     };
 
     assert.equal(endpoints.health, 'http://localhost:3000/api/health');
@@ -64,18 +64,18 @@ describe('API Integration Tests', () => {
   describe('Auth Endpoints', () => {
     test('GET /api/auth/me should require authentication', async () => {
       const mockReq = {
-        headers: {}
+        headers: {},
       };
-      
+
       assert.ok(!mockReq.headers.authorization);
     });
 
     test('POST /api/auth/sync should validate required fields', () => {
       const validBody = {
         uid: 'user123',
-        email: 'test@example.com'
+        email: 'test@example.com',
       };
-      
+
       const invalidBody = { email: 'test@example.com' };
 
       assert.ok(validBody.uid && validBody.email);
@@ -86,7 +86,7 @@ describe('API Integration Tests', () => {
   describe('Captures Endpoints', () => {
     test('GET /api/captures should support pagination params', () => {
       const params = { limit: 20, offset: 0, type: 'image' };
-      
+
       assert.ok(params.limit > 0);
       assert.ok(params.offset >= 0);
     });
@@ -94,7 +94,7 @@ describe('API Integration Tests', () => {
     test('GET /api/captures/:id should validate ID format', () => {
       const validId = 'capture_123';
       const invalidId = '';
-      
+
       assert.ok(validId.length > 0);
       assert.ok(invalidId.length === 0);
     });
@@ -104,7 +104,7 @@ describe('API Integration Tests', () => {
     test('POST /api/upload/image should validate dataUrl', () => {
       const validDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
       const invalidDataUrl = 'not-a-data-url';
-      
+
       assert.ok(validDataUrl.startsWith('data:'));
       assert.ok(!invalidDataUrl.startsWith('data:'));
     });
@@ -112,7 +112,7 @@ describe('API Integration Tests', () => {
     test('POST /api/upload/video should validate blob', () => {
       const validBlob = 'data:video/webm;base64,AAAAGGZ0eXBteXAA';
       const invalidBlob = 'invalid-blob';
-      
+
       assert.ok(validBlob.startsWith('data:video/webm'));
       assert.ok(!invalidBlob.startsWith('data:video/webm'));
     });
@@ -121,7 +121,7 @@ describe('API Integration Tests', () => {
   describe('Subscription Endpoints', () => {
     test('POST /api/subscription/upgrade should validate plan', () => {
       const validPlans = ['free', 'pro'];
-      
+
       assert.ok(validPlans.includes('free'));
       assert.ok(validPlans.includes('pro'));
       assert.ok(!validPlans.includes('enterprise'));
@@ -135,7 +135,7 @@ describe('Database Schema Validation', () => {
     email: 'string',
     subscription: 'free|pro',
     captureCount: 'number',
-    storageUsedMB: 'number'
+    storageUsedMB: 'number',
   };
 
   test('should validate user schema fields', () => {
@@ -144,7 +144,7 @@ describe('Database Schema Validation', () => {
       email: 'test@example.com',
       subscription: 'free',
       captureCount: 0,
-      storageUsedMB: 0
+      storageUsedMB: 0,
     };
 
     assert.ok(typeof validUser.uid === 'string');
@@ -158,7 +158,7 @@ describe('Database Schema Validation', () => {
     id: 'string',
     userId: 'string',
     type: 'image|video',
-    sizeMB: 'number'
+    sizeMB: 'number',
   };
 
   test('should validate capture schema fields', () => {
@@ -166,7 +166,7 @@ describe('Database Schema Validation', () => {
       id: 'capture_123',
       userId: 'user123',
       type: 'image',
-      sizeMB: 1.5
+      sizeMB: 1.5,
     };
 
     assert.ok(typeof validCapture.id === 'string');
@@ -187,7 +187,7 @@ describe('Error Handling', () => {
 
   test('should create operational errors', () => {
     const error = new AppError('Not found', 404);
-    
+
     assert.equal(error.message, 'Not found');
     assert.equal(error.statusCode, 404);
     assert.equal(error.isOperational, true);
@@ -195,8 +195,8 @@ describe('Error Handling', () => {
 
   test('should handle validation errors', () => {
     const errors = [];
-    
-    const validateEmail = (email) => {
+
+    const validateEmail = email => {
       if (!email) {
         errors.push('Email is required');
         return false;
@@ -219,10 +219,7 @@ describe('Error Handling', () => {
 
 describe('CORS Configuration', () => {
   test('should allow extension origins', () => {
-    const allowedOrigins = [
-      'chrome-extension://*',
-      'http://localhost:3000'
-    ];
+    const allowedOrigins = ['chrome-extension://*', 'http://localhost:3000'];
 
     assert.ok(allowedOrigins.includes('chrome-extension://*'));
     assert.ok(allowedOrigins.includes('http://localhost:3000'));
@@ -231,7 +228,7 @@ describe('CORS Configuration', () => {
   test('should handle credentials', () => {
     const corsConfig = {
       origin: ['chrome-extension://*'],
-      credentials: true
+      credentials: true,
     };
 
     assert.equal(corsConfig.credentials, true);
@@ -242,7 +239,7 @@ describe('Rate Limiting', () => {
   test('should configure rate limits correctly', () => {
     const config = {
       windowMs: 15 * 60 * 1000,
-      max: 100
+      max: 100,
     };
 
     assert.equal(config.windowMs, 900000);
@@ -251,8 +248,8 @@ describe('Rate Limiting', () => {
 
   test('should track request counts', () => {
     const requestCounts = new Map();
-    
-    const incrementCount = (ip) => {
+
+    const incrementCount = ip => {
       const count = requestCounts.get(ip) || 0;
       requestCounts.set(ip, count + 1);
       return count + 1;

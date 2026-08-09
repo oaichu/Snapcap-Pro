@@ -31,6 +31,13 @@ for var in "${REQUIRED_VARS[@]}"; do
     fi
 done
 
+# GRAFANA_PASSWORD must be a real, non-empty secret: an empty/blank value would
+# boot Grafana with a weak or default admin password. Fail fast instead.
+if [ -z "${GRAFANA_PASSWORD// }" ]; then
+    echo "❌ GRAFANA_PASSWORD is empty or blank in $ENV_FILE — refusing to start Grafana with a weak admin password"
+    exit 1
+fi
+
 echo "✅ Environment validation passed"
 
 if [ ! -f "backend/serviceAccountKey.json" ]; then

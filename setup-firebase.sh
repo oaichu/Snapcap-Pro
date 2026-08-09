@@ -7,17 +7,28 @@ set -e
 echo "🔥 SnapCap Firebase Project Setup"
 echo "=================================="
 
-# Check if Firebase CLI is installed
+# ---------------------------------------------------------------------------
+# PREFLIGHT
+# ---------------------------------------------------------------------------
+echo "🧪 Preflight checks..."
+
+# 1. Firebase CLI must already be present. We do NOT silently `npm install -g`:
+#    an unexpected CLI version is a configuration error, not something to mask.
 if ! command -v firebase &> /dev/null; then
-    echo "📦 Installing Firebase CLI..."
-    npm install -g firebase-tools
+    echo "❌ Firebase CLI not found."
+    echo "   Install it explicitly, then re-run:  npm install -g firebase-tools"
+    exit 1
 fi
+echo "  ✅ firebase CLI: $(firebase --version)"
 
-# Login to Firebase
-echo "🔐 Logging into Firebase..."
-firebase login
+# 2. Must be authenticated.
+if ! firebase login:list 2>/dev/null | grep -qi '@'; then
+    echo "❌ Not logged in to Firebase. Run: firebase login"
+    exit 1
+fi
+echo "  ✅ authenticated"
 
-# Get project ID from user
+# 3. Project ID must be supplied and selectable.
 read -p "Enter your Firebase Project ID: " PROJECT_ID
 
 if [ -z "$PROJECT_ID" ]; then
@@ -25,47 +36,51 @@ if [ -z "$PROJECT_ID" ]; then
     exit 1
 fi
 
+if ! firebase use "$PROJECT_ID" > /dev/null 2>&1; then
+    echo "❌ Cannot select project '$PROJECT_ID' (does it exist and do you have access?)"
+    exit 1
+fi
+
+# 4. Confirm the CLI really is pointed at the intended project before we touch rules.
+ACTIVE_PROJECT="$(firebase use 2>/dev/null | tr -d '\r')"
+echo "  ✅ active project: $ACTIVE_PROJECT"
+case "$ACTIVE_PROJECT" in
+    *"$PROJECT_ID"*) ;;
+    *)
+        echo "❌ Active project does not match '$PROJECT_ID' — aborting before any rules deploy"
+        exit 1
+        ;;
+esac
+
 echo "📋 Using project: $PROJECT_ID"
 
-# Set project
-firebase use $PROJECT_ID
-
-# Enable required services
-echo "🔧 Enabling Firebase services..."
-
-echo "  → Enabling Authentication..."
-firebase auth:enable --project=$PROJECT_ID
-
-echo "  → Enabling Firestore..."
-firebase firestore:enable --project=$PROJECT_ID
-
-echo "  → Enabling Storage..."
-firebase storage:enable --project=$PROJECT_ID
-
-echo "  → Enabling Functions..."
-firebase functions:enable --project=$PROJECT_ID
+# ---------------------------------------------------------------------------
+# SERVICES
+# ---------------------------------------------------------------------------
+# NOTE: the Firebase CLI has no "enable" verb for Auth, Firestore, Storage or
+# Functions (earlier revisions of this script invoked four such commands that do
+# not exist). Enabling these products is a Console/gcloud operation and must be
+# done manually before running this script.
+echo "🔧 Firebase services must be enabled manually in the Console:"
+echo "   Authentication: https://console.firebase.google.com/project/$PROJECT_ID/authentication/providers"
+echo "   Firestore:      https://console.firebase.google.com/project/$PROJECT_ID/firestore"
+echo "   Storage:        https://console.firebase.google.com/project/$PROJECT_ID/storage"
 
 # Configure Authentication providers
 echo "🔐 Configuring Authentication..."
-
-echo "  → Enabling Google Sign-In..."
-# Note: This requires manual configuration in Firebase Console
-echo "  ⚠️  Please manually enable Google provider in Firebase Console:"
+echo "  ⚠️  Please manually enable the Google provider in Firebase Console:"
 echo "     https://console.firebase.google.com/project/$PROJECT_ID/authentication/providers"
 
 # Configure Firestore indexes
+# firestore.indexes.json is now a REVIEWED, TRACKED artifact. Only generate it when
+# missing, so this script can never silently clobber the committed version.
 echo "📊 Setting up Firestore indexes..."
-cat > firestore.indexes.json << EOF
+if [ -f firestore.indexes.json ]; then
+    echo "  ✅ firestore.indexes.json already present (tracked) — keeping it"
+else
+    cat > firestore.indexes.json << EOF
 {
   "indexes": [
-    {
-      "collectionGroup": "captures",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "userId", "order": "ASCENDING"},
-        {"fieldPath": "createdAt", "order": "DESCENDING"}
-      ]
-    },
     {
       "collectionGroup": "captures",
       "queryScope": "COLLECTION",
@@ -74,19 +89,12 @@ cat > firestore.indexes.json << EOF
         {"fieldPath": "type", "order": "ASCENDING"},
         {"fieldPath": "createdAt", "order": "DESCENDING"}
       ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "email", "order": "ASCENDING"}
-      ]
     }
   ]
 }
 EOF
-
-firebase firestore:indexes:deploy --project=$PROJECT_ID
+    echo "  ✅ generated firestore.indexes.json"
+fi
 
 # Configure Firestore TTL policy for expired captures
 echo "⏰ Setting up Firestore TTL policy for expired captures..."
@@ -103,90 +111,29 @@ EOF
 echo "  ⚠️  TTL policy must be enabled via gcloud:"
 echo "     gcloud firestore fields ttls update expiresAt --collection-group=captures --enable-ttl --project=$PROJECT_ID"
 
-# Deploy Firestore rules
-echo "🔒 Deploying Firestore security rules..."
-cat > firestore.rules << 'EOF'
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    match /users/{userId} {
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isAuthenticated() && isOwner(userId);
-      allow delete: if isAuthenticated() && isOwner(userId);
-    }
-    
-    match /captures/{captureId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-    
-    match /subscriptions/{subscriptionId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow write: if isAuthenticated();
-    }
-    
-    match /analytics/{analyticsId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if false;
-    }
-  }
-}
-EOF
+# ---------------------------------------------------------------------------
+# DEPLOY SECURITY RULES + INDEXES
+# ---------------------------------------------------------------------------
+# Rules are NO LONGER generated here. firestore.rules and storage.rules are
+# hand-authored, reviewed, version-controlled artifacts (deny-all client writes,
+# owner-scoped reads). This script only deploys them via firebase.json.
+#
+# ROLLBACK: before deploying, record the CURRENT ruleset ID so it can be restored.
+#   Firestore: firebase firestore:databases:list  /  Console > Firestore > Rules > History
+#   Storage:   Console > Storage > Rules > History
+#   Or via API: GET https://firebaserules.googleapis.com/v1/projects/$PROJECT_ID/releases
+# Rolling back = re-releasing the previously recorded ruleset ID.
+echo "🔒 Deploying security rules and indexes..."
+echo "  ⚠️  Record the current ruleset ID now (see rollback notes in this script) before continuing."
 
-firebase deploy --only firestore:rules --project=$PROJECT_ID
+for f in firebase.json firestore.rules storage.rules firestore.indexes.json; do
+    if [ ! -f "$f" ]; then
+        echo "❌ Missing required artifact: $f"
+        exit 1
+    fi
+done
 
-# Deploy Storage rules
-echo "🔒 Deploying Storage security rules..."
-cat > storage.rules << 'EOF'
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    function isValidImageType() {
-      return request.resource.type.matches('image/.*');
-    }
-    
-    function isValidVideoType() {
-      return request.resource.type == 'video/webm';
-    }
-    
-    function isWithinSizeLimit() {
-      return request.resource.size < 50 * 1024 * 1024;
-    }
-    
-    match /captures/{userId}/{fileName} {
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow create: if isAuthenticated() 
-                    && isOwner(userId)
-                    && (isValidImageType() || isValidVideoType())
-                    && isWithinSizeLimit();
-      allow delete: if isAuthenticated() && isOwner(userId);
-    }
-  }
-}
-EOF
-
-firebase deploy --only storage --project=$PROJECT_ID
+firebase deploy --only firestore:rules,firestore:indexes,storage --project=$PROJECT_ID
 
 # Deploy Cloud Functions for cleanup
 echo "☁️  Deploying Cloud Functions for expired captures cleanup..."

@@ -3,7 +3,13 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.production.example
 *.log
 coverage/
 .DS_Store
 backend/serviceAccountKey.json
+
+# firestore.rules / storage.rules / firebase.json / firestore.indexes.json are now
+# hand-authored, reviewed security artifacts and MUST be tracked in version control.
+# Only the transient TTL scratch file emitted by setup-firebase.sh stays ignored.
+firestore.ttl.json

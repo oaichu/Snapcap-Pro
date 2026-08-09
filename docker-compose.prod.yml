@@ -21,6 +21,7 @@ services:
       - ./backend/serviceAccountKey.json:/app/serviceAccountKey.json:ro
     restart: always
     deploy:
+      # TODO(FREEZE): `replicas: 3` is Swarm-only and is a silent no-op under plain `docker compose up` — this runs as a single instance. Deferred.
       replicas: 3
       resources:
         limits:
@@ -30,7 +31,13 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {if(r.statusCode!==200) process.exit(1)})"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/api/health', (r) => {if(r.statusCode!==200) process.exit(1)})",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -39,9 +46,10 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
+      # TODO(FREEZE): these `:ro` binds conflict with envsubst-based config templating (a read-only mount cannot be rewritten at boot); needs a compose-topology change (template dir + entrypoint render into a writable path). Deferred.
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certbot/conf:/etc/letsencrypt:ro
@@ -60,7 +68,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - '9090:9090'
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -74,7 +82,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - '3001:3000'
     volumes:
       - ./monitoring/grafana.ini:/etc/grafana/grafana.ini:ro
       - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards:ro

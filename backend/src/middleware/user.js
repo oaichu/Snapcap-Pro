@@ -11,7 +11,7 @@ export function createUserMiddleware(req, res, next) {
       }
 
       const admin = getAdmin();
-      
+
       try {
         const userRecord = await admin.auth().getUser(uid);
         req.userRecord = userRecord;
@@ -21,7 +21,7 @@ export function createUserMiddleware(req, res, next) {
             uid,
             email,
             displayName: displayName || '',
-            photoURL: photoURL || ''
+            photoURL: photoURL || '',
           });
           req.userRecord = newUser;
         } else {

@@ -21,7 +21,7 @@ export default function () {
   // Test health endpoint under stress
   const healthRes = http.get(`${BASE_URL}/api/health`);
   check(healthRes, {
-    'health status is 200': (r) => r.status === 200,
+    'health status is 200': r => r.status === 200,
   });
 
   sleep(0.5);

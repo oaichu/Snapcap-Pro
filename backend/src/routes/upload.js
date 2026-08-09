@@ -16,7 +16,7 @@ const PRO_FEATURES = {
 
 function requireProFeature(subscription, feature) {
   if (subscription !== 'pro' && config.subscription.free.features.includes(feature) === false) {
-    throw new AppError(`${feature} is a Pro feature. Please upgrade to Pro.`, 403);
+    throw new AppError('This feature is currently unavailable.', 403);
   }
 }
 
@@ -31,7 +31,7 @@ async function uploadCapture(req, res, captureType, contentType, extension, feat
   const db = getDb();
   const userRef = db.collection('users').doc(req.user.uid);
   const userDoc = await userRef.get();
-  
+
   if (!userDoc.exists) {
     throw new AppError('User not found', 404);
   }
@@ -42,12 +42,16 @@ async function uploadCapture(req, res, captureType, contentType, extension, feat
 
   requireProFeature(subscription, feature);
 
-  const capturesSnapshot = await db.collection('captures')
+  const capturesSnapshot = await db
+    .collection('captures')
     .where('userId', '==', req.user.uid)
     .get();
 
   if (capturesSnapshot.size >= limits.maxCaptures) {
-    throw new AppError(`Capture limit reached for ${subscription} plan. Please upgrade.`, 403);
+    throw new AppError(
+      'Capture limit reached. Please delete some existing captures and try again.',
+      403
+    );
   }
 
   const base64Data = bodyData.split(',')[1];
@@ -59,48 +63,51 @@ async function uploadCapture(req, res, captureType, contentType, extension, feat
   }
 
   if ((userData.storageUsedMB || 0) + sizeMB > limits.maxStorageMB) {
-    throw new AppError(`Storage limit reached for ${subscription} plan. Please upgrade or delete old captures.`, 403);
+    throw new AppError(
+      `Storage limit reached. Please delete some existing captures and try again.`,
+      403
+    );
   }
 
   const storage = getStorageInstance();
   const filename = `captures/${req.user.uid}/${uuidv4()}.${extension}`;
-  
+
   const bucket = storage.bucket();
   const file = bucket.file(filename);
-  
+
   await file.save(buffer, {
     metadata: {
       contentType,
       metadata: {
         userId: req.user.uid,
-        type: captureType
-      }
-    }
+        type: captureType,
+      },
+    },
   });
 
   // Signed URL lifetime matches the capture document expiry (30 days) so users
   // never lose access to a capture that still exists.
   const [url] = await file.getSignedUrl({
     action: 'read',
-    expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+    expires: Date.now() + 30 * 24 * 60 * 60 * 1000,
   });
 
   const batch = db.batch();
   const captureRef = db.collection('captures').doc();
-  
+
   batch.set(captureRef, {
     userId: req.user.uid,
     type: captureType,
     url: filename,
     sizeMB: Math.round(sizeMB * 100) / 100,
     createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   });
 
   batch.update(userRef, {
     captureCount: FieldValue.increment(1),
     storageUsedMB: FieldValue.increment(Math.round(sizeMB * 100) / 100),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   });
 
   await batch.commit();
@@ -109,16 +116,24 @@ async function uploadCapture(req, res, captureType, contentType, extension, feat
     id: captureRef.id,
     url: url,
     sizeMB: Math.round(sizeMB * 100) / 100,
-    message: `${captureType === 'image' ? 'Image' : 'Video'} uploaded successfully`
+    message: `${captureType === 'image' ? 'Image' : 'Video'} uploaded successfully`,
   });
 }
 
-router.post('/image', authenticate, asyncHandler(async (req, res) => {
-  await uploadCapture(req, res, 'image', 'image/png', 'png', PRO_FEATURES.full_page_capture);
-}));
+router.post(
+  '/image',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    await uploadCapture(req, res, 'image', 'image/png', 'png', PRO_FEATURES.full_page_capture);
+  })
+);
 
-router.post('/video', authenticate, asyncHandler(async (req, res) => {
-  await uploadCapture(req, res, 'video', 'video/webm', 'webm', PRO_FEATURES.screen_recording);
-}));
+router.post(
+  '/video',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    await uploadCapture(req, res, 'video', 'video/webm', 'webm', PRO_FEATURES.screen_recording);
+  })
+);
 
 export default router;

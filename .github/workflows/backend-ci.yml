@@ -10,7 +10,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     needs: lint
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -56,17 +56,17 @@ jobs:
 
       - name: Run unit tests
         working-directory: ./backend
-        run: node --test test/unit/
+        run: node --test test/unit/*.test.js
 
       - name: Run integration tests
         working-directory: ./backend
-        run: node --test test/integration/
+        run: node --test test/integration/*.test.js
 
   security:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -90,7 +90,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [test, security]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
