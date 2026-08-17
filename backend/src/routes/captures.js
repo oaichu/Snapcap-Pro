@@ -12,14 +12,20 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const db = getDb();
-    const { limit = 20, offset = 0, type } = req.query;
+    const { type } = req.query;
+    // Clamp/coerce query params: NaN, garbage, zero or negatives must never
+    // reach the Firestore query builder (a NaN limit/offset throws at runtime).
+    const parsedLimit = parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 100) : 20;
+    const parsedOffset = parseInt(req.query.offset, 10);
+    const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0;
 
     let query = db
       .collection('captures')
       .where('userId', '==', req.user.uid)
       .orderBy('createdAt', 'desc')
-      .limit(parseInt(limit))
-      .offset(parseInt(offset));
+      .limit(limit)
+      .offset(offset);
 
     if (type) {
       query = query.where('type', '==', type);
@@ -35,8 +41,8 @@ router.get(
     res.json({
       captures,
       pagination: {
-        limit: parseInt(limit),
-        offset: parseInt(offset),
+        limit,
+        offset,
         total: captures.length,
       },
     });

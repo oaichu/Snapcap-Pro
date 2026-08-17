@@ -13,7 +13,21 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
-initializeFirebase();
+try {
+  initializeFirebase();
+} catch (err) {
+  // Fail loudly with actionable guidance instead of a raw stack trace: without
+  // Firestore/Storage no endpoint can serve a single request, so there is no
+  // point starting a half-dead server.
+  console.error('SnapCap backend could not start: Firebase initialization failed.');
+  console.error('  Reason: ' + ((err && err.message) || String(err)));
+  console.error(
+    '  Fix: create a Firebase project, save the service account key as ' +
+      'backend/serviceAccountKey.json, and set FIREBASE_PROJECT_ID and ' +
+      'FIREBASE_STORAGE_BUCKET (see backend/.env.example).'
+  );
+  process.exit(1);
+}
 
 const logger = {
   info: (message, meta = {}) =>

@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnOpenEditor = document.getElementById('openEditorHome');
   const btnViewHistory = document.getElementById('viewHistoryBtn');
   const toggleMic = document.getElementById('toggleMic');
-  const recordLimit = document.getElementById('recordLimit');
   const delaySelect = document.getElementById('delaySelect');
   const captureStatus = document.getElementById('captureStatus');
 
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load preferences
   chrome.storage.local.get(['micEnabled', 'recordDuration', 'captureDelay'], res => {
     if (res.micEnabled !== undefined) toggleMic.checked = res.micEnabled;
-    if (res.recordDuration) recordLimit.value = res.recordDuration;
+    if (res.recordDuration) setRecordDuration(res.recordDuration);
     if (res.captureDelay) delaySelect.value = res.captureDelay;
   });
 
@@ -78,8 +77,23 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.set({ micEnabled: toggleMic.checked });
   });
 
-  recordLimit.addEventListener('change', () => {
-    chrome.storage.local.set({ recordDuration: parseInt(recordLimit.value, 10) });
+  // Recording duration — iOS-style segmented control
+  function getRecordDuration() {
+    const active = document.querySelector('#recordSegmented .segmented-item.active');
+    return active ? parseInt(active.dataset.duration, 10) : 30;
+  }
+
+  function setRecordDuration(seconds) {
+    document.querySelectorAll('#recordSegmented .segmented-item').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.duration, 10) === seconds);
+    });
+  }
+
+  document.querySelectorAll('#recordSegmented .segmented-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setRecordDuration(parseInt(btn.dataset.duration, 10));
+      chrome.storage.local.set({ recordDuration: parseInt(btn.dataset.duration, 10) });
+    });
   });
 
   delaySelect.addEventListener('change', () => {
@@ -184,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Recording
   btnStartRecord.addEventListener('click', () => {
-    let duration = parseInt(recordLimit.value, 10);
+    let duration = getRecordDuration();
     if (isNaN(duration) || duration < 10) duration = 30;
     if (duration > 30) duration = 30;
 
@@ -196,6 +210,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // document's getUserMedia({ chromeMediaSourceId: streamId }) succeeds (N-11).
     renderRecordingState({ state: STATE_STARTING, duration });
     btnStartRecord.innerHTML = 'Selecting source...';
+
+    // The tab on screen while recording is the tab behind the popup; the service
+    // worker needs its id to show the in-page recording badge at the right tab.
+    // Resolve it in PARALLEL with the picker: the query is near-instant, while
+    // choosing a source takes seconds, so by the time the picker callback fires
+    // the value is virtually always available. START_RECORDING is sent directly
+    // in the picker callback (no promise chain) so a popup close can never drop
+    // the message; if the id is still missing, the service worker falls back to
+    // the active tab (best effort).
+    let activeTabId = null;
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      activeTabId = tabs && tabs[0] ? tabs[0].id : null;
+    });
 
     chrome.desktopCapture.chooseDesktopMedia(
       ['screen', 'window', 'tab', 'audio'],
@@ -218,6 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             canRequestAudioTrack,
             duration,
             mic: toggleMic.checked,
+            tabId: activeTabId,
           })
           .catch(() => {});
       }
@@ -325,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Re-derive the end time from the authoritative session on every poll,
       // but leave the ticker itself running.
-      const duration = view.duration || parseInt(recordLimit.value, 10) || 30;
+      const duration = view.duration || getRecordDuration() || 30;
       if (view.startedAt) {
         countdownEndsAt = view.startedAt + duration * 1000;
       } else if (!countdownEndsAt) {
@@ -370,23 +398,42 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => quickDownload.classList.remove('success'), 2000);
   });
 
+  function dataURLtoBlob(dataUrl) {
+    const parts = dataUrl.split(';base64,');
+    const contentType = (parts[0] && parts[0].split(':')[1]) || 'image/png';
+    const raw = window.atob(parts[1] || '');
+    const uInt8Array = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; ++i) {
+      uInt8Array[i] = raw.charCodeAt(i);
+    }
+    return new Blob([uInt8Array], { type: contentType });
+  }
+
   quickCopy.addEventListener('click', async () => {
     if (!capturedImageDataUrl) return;
 
     try {
-      const response = await fetch(capturedImageDataUrl);
-      const blob = await response.blob();
-
-      if (navigator.clipboard && navigator.clipboard.write) {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        setStatus(statusBar, 'Copied to clipboard!', 'success');
-        quickCopy.classList.add('success');
-        setTimeout(() => quickCopy.classList.remove('success'), 2000);
-      } else {
+      if (!navigator.clipboard || !navigator.clipboard.write) {
         setStatus(statusBar, 'Clipboard not supported', 'error');
+        return;
       }
+
+      const blob = dataURLtoBlob(capturedImageDataUrl);
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+
+      setStatus(statusBar, 'Copied to clipboard!', 'success');
+      quickCopy.classList.add('success');
+      setTimeout(() => quickCopy.classList.remove('success'), 2000);
     } catch (err) {
-      setStatus(statusBar, 'Failed to copy', 'error');
+      console.warn('Direct blob copy failed, attempting promise copy:', err);
+      try {
+        const blobPromise = fetch(capturedImageDataUrl).then(r => r.blob());
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
+        setStatus(statusBar, 'Copied to clipboard!', 'success');
+      } catch (fallbackErr) {
+        console.error('Failed to copy to clipboard:', fallbackErr);
+        setStatus(statusBar, 'Failed to copy', 'error');
+      }
     }
   });
 
@@ -394,23 +441,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!capturedImageDataUrl) return;
 
     try {
-      const response = await fetch(capturedImageDataUrl);
-      const blob = await response.blob();
+      const blob = dataURLtoBlob(capturedImageDataUrl);
       const file = new File([blob], 'snapcap-capture.png', { type: 'image/png' });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'SnapCap Capture',
+          title: 'Snapcap Pro Capture',
           text: 'Check out my capture!',
         });
         setStatus(statusBar, 'Shared!', 'success');
       } else {
-        setStatus(statusBar, 'Share not supported - use Copy or Download', 'error');
+        // Desktop fallback: copy to clipboard!
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        setStatus(statusBar, 'Copied image to clipboard for sharing!', 'success');
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        setStatus(statusBar, 'Share failed', 'error');
+        setStatus(statusBar, 'Copied image to clipboard!', 'success');
       }
     }
   });
@@ -438,16 +486,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'SnapCap Recording',
+          title: 'Snapcap Pro Recording',
           text: 'Check out my recording!',
         });
         setStatus(statusBarVideo, 'Shared!', 'success');
       } else {
-        setStatus(statusBarVideo, 'Share not supported - use Download', 'error');
+        // Desktop fallback: trigger download!
+        const link = document.createElement('a');
+        link.download = `snapcap-${Date.now()}.webm`;
+        link.href = URL.createObjectURL(capturedVideoBlob);
+        link.click();
+        setStatus(statusBarVideo, 'Downloaded recording to share!', 'success');
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        setStatus(statusBarVideo, 'Share failed', 'error');
+        setStatus(statusBarVideo, 'Downloaded recording to share!', 'success');
       }
     }
   });

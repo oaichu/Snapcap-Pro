@@ -31,11 +31,5 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }
-
-    // Account-deletion records. Server-owned audit trail.
-    match /deletions/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
-    }
   }
 }

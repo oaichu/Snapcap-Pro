@@ -202,11 +202,52 @@ async function startRecording(streamId, duration, includeMic, canRequestAudioTra
     };
   }
 
-  // From here until start() (or failure) a stop has nothing to stop yet.
   startInFlight = true;
 
   try {
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    if (canRequestAudioTrack === true) {
+      const audioConstraints = {
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: streamId,
+            maxFrameRate: 60,
+          },
+        },
+        audio: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: streamId,
+          },
+        },
+      };
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+      } catch (audioErr) {
+        console.warn('[SnapCap offscreen] Audio capture failed, falling back to video-only:', audioErr);
+        const videoOnlyConstraints = {
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: streamId,
+              maxFrameRate: 60,
+            },
+          },
+        };
+        stream = await navigator.mediaDevices.getUserMedia(videoOnlyConstraints);
+      }
+    } else {
+      const videoOnlyConstraints = {
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: streamId,
+            maxFrameRate: 60,
+          },
+        },
+      };
+      stream = await navigator.mediaDevices.getUserMedia(videoOnlyConstraints);
+    }
     activeStreams.push(stream);
   } catch (err) {
     const message = (err && err.message) || String(err);
@@ -214,22 +255,11 @@ async function startRecording(streamId, duration, includeMic, canRequestAudioTra
     pendingStop = false;
     releaseStream();
 
-    if (canRequestAudioTrack === true) {
-      // The id is burned — ask the service worker for a FRESH picker id and a
-      // video-only attempt. The SW caps this at exactly one retry.
-      sendToSw({
-        action: ACTION_RECORDING_ERROR,
-        fatal: false,
-        retry: 'video_only',
-        error: 'Screen capture with audio failed (' + message + '). Retrying without system audio.',
-      });
-    } else {
-      sendToSw({
-        action: ACTION_RECORDING_ERROR,
-        fatal: true,
-        error: 'Screen capture failed: ' + message,
-      });
-    }
+    sendToSw({
+      action: ACTION_RECORDING_ERROR,
+      fatal: true,
+      error: 'Screen capture failed: ' + message,
+    });
     return;
   }
 

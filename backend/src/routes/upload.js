@@ -28,6 +28,24 @@ async function uploadCapture(req, res, captureType, contentType, extension, feat
     throw new AppError(`${captureType === 'image' ? 'dataUrl' : 'blob'} is required`, 400);
   }
 
+  // Fail fast BEFORE any DB/storage work: a malformed payload must 400, never
+  // silently save a 0-byte file. (Before, bodyData without a comma produced
+  // `undefined` -> Buffer.from(undefined) -> an empty buffer that was uploaded
+  // and recorded as a real capture.)
+  const expectedPrefix = 'data:' + contentType + ';';
+  if (typeof bodyData !== 'string' || !bodyData.startsWith(expectedPrefix)) {
+    throw new AppError(`Payload must be a data:${contentType} data URL`, 400);
+  }
+  const base64Part = bodyData.slice(expectedPrefix.length);
+  if (!base64Part || !base64Part.startsWith('base64,')) {
+    throw new AppError('Payload must be base64-encoded', 400);
+  }
+  const buffer = Buffer.from(base64Part.slice('base64,'.length), 'base64');
+  if (buffer.length === 0) {
+    throw new AppError('Empty payload', 400);
+  }
+  const sizeMB = buffer.length / (1024 * 1024);
+
   const db = getDb();
   const userRef = db.collection('users').doc(req.user.uid);
   const userDoc = await userRef.get();
@@ -53,10 +71,6 @@ async function uploadCapture(req, res, captureType, contentType, extension, feat
       403
     );
   }
-
-  const base64Data = bodyData.split(',')[1];
-  const buffer = Buffer.from(base64Data, 'base64');
-  const sizeMB = buffer.length / (1024 * 1024);
 
   if (sizeMB > config.storage.maxFileSize / (1024 * 1024)) {
     throw new AppError('File size exceeds maximum allowed size', 400);

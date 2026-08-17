@@ -2,7 +2,6 @@ export const Collections = {
   USERS: 'users',
   CAPTURES: 'captures',
   SUBSCRIPTIONS: 'subscriptions',
-  ANALYTICS: 'analytics',
 };
 
 export const UserSchema = {
@@ -50,14 +49,6 @@ export const SubscriptionSchema = {
   cancelAtPeriodEnd: 'boolean',
   createdAt: 'string (ISO date)',
   updatedAt: 'string (ISO date)',
-};
-
-export const AnalyticsSchema = {
-  id: 'string (auto-generated)',
-  userId: 'string',
-  event: 'string',
-  data: 'object',
-  timestamp: 'string (ISO date)',
 };
 
 export const Indexes = [

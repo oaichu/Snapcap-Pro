@@ -10,6 +10,7 @@
   let isSelecting = false;
   let startX, startY;
   let selectionBox = null;
+  let selectionSizeLabel = null;
   let cropParams = null;
 
   // Listen for messages
@@ -88,11 +89,7 @@
     if (document.getElementById('snapcap-selection')) return;
 
     const container = document.createElement('div');
-    container.id = 'snapcap-selection';
-    container.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.4); cursor: crosshair; z-index: 2147483647;
-    `;
+    container.id = 'snapcap-selection'; // base styling lives in content/overlay.css
 
     // Single teardown path for the legacy selection overlay. Every exit
     // (Escape AND normal mouseup completion) must run it, or the
@@ -105,6 +102,7 @@
         selectionBox.remove();
         selectionBox = null;
       }
+      selectionSizeLabel = null;
     }
 
     function escHandler(e) {
@@ -119,10 +117,11 @@
       startY = e.clientY;
 
       selectionBox = document.createElement('div');
-      selectionBox.style.cssText = `
-        position: fixed; border: 2px solid #6366f1; background: rgba(99,102,241,0.1);
-        pointer-events: none; z-index: 2147483648;
-      `;
+      selectionBox.id = 'snapcap-selection-box'; // base styling in overlay.css; left/top/width/height stay inline below
+      const sizeLabel = document.createElement('span');
+      sizeLabel.id = 'snapcap-selection-size';
+      selectionSizeLabel = sizeLabel; // cached: the mousemove handler runs per event
+      selectionBox.appendChild(sizeLabel);
       document.body.appendChild(selectionBox);
     });
 
@@ -145,6 +144,10 @@
         width: Math.round(w * window.devicePixelRatio),
         height: Math.round(h * window.devicePixelRatio),
       };
+
+      if (selectionSizeLabel) {
+        selectionSizeLabel.textContent = `${Math.round(w)} × ${Math.round(h)} px`;
+      }
     });
 
     container.addEventListener('mouseup', () => {
@@ -338,19 +341,12 @@
     const remaining = () => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
 
     const badge = document.createElement('div');
-    badge.id = 'snapcap-badge';
-    badge.style.cssText = `
-      position: fixed; top: 20px; right: 20px; z-index: 2147483647;
-      background: #ef4444; color: white; padding: 10px 16px;
-      border-radius: 8px; font-family: system-ui; font-size: 14px;
-      font-weight: 600; display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    `;
+    badge.id = 'snapcap-badge'; // base styling lives in content/overlay.css
 
     badge.innerHTML = `
-      <span style="width:8px;height:8px;background:white;border-radius:50%;animation:pulse 1s infinite"></span>
+      <span class="snapcap-badge-dot"></span>
       <span id="snapcap-timer">${remaining()}s</span>
-      <button id="snapcap-stop" style="background:white;color:#ef4444;border:none;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">Stop</button>
+      <button id="snapcap-stop">Stop</button>
     `;
     document.body.appendChild(badge);
 
@@ -468,30 +464,32 @@
     const overlay = document.createElement('div');
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(10,10,15,0.75); display: flex; align-items: center;
-      justify-content: center; font-family: Inter, system-ui, sans-serif;
-      backdrop-filter: blur(4px); pointer-events: auto;
+      background: rgba(10,10,15,0.65); display: flex; align-items: center;
+      justify-content: center; font-family: -apple-system, system-ui, sans-serif;
+      backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+      pointer-events: auto;
     `;
 
     const card = document.createElement('div');
     card.style.cssText = `
-      background: #12121a; border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px; padding: 16px; max-width: min(560px, 90vw);
-      box-shadow: 0 24px 80px rgba(0,0,0,0.6); text-align: center;
+      background: rgba(26,26,32,0.92); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 20px; max-width: min(560px, 90vw);
+      box-shadow: 0 32px 96px rgba(0,0,0,0.6); text-align: center;
       pointer-events: auto;
     `;
 
     const img = document.createElement('img');
     img.src = dataUrl;
     img.style.cssText = `
-      max-width: 100%; max-height: 55vh; border-radius: 10px; display: block;
-      margin: 0 auto 14px; background: #000;
+      max-width: 100%; max-height: 55vh; border-radius: 14px; display: block;
+      margin: 0 auto 16px; background: #000;
     `;
 
     const title = document.createElement('div');
     title.textContent = 'Captured!';
     title.style.cssText = `
-      font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 12px;
+      font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 16px;
+      letter-spacing: -0.2px;
     `;
 
     const actions = document.createElement('div');
@@ -503,16 +501,22 @@
       const btn = document.createElement('button');
       btn.textContent = label;
       btn.style.cssText = `
-        flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
-        background: ${primary ? '#6366f1' : '#1a1a25'}; color: #fff; font-size: 13px;
-        font-weight: 600; cursor: pointer; font-family: inherit; min-width: 72px;
-        transition: transform 0.1s ease;
+        flex: 1; padding: 10px 14px; border-radius: 12px; border: 1px solid ${primary ? 'transparent' : 'rgba(255,255,255,0.12)'};
+        background: ${primary ? 'linear-gradient(180deg, #0a84ff, #0066d6)' : 'rgba(255,255,255,0.08)'}; color: #fff; font-size: 13px;
+        font-weight: 600; cursor: pointer; font-family: inherit; min-width: 76px;
+        transition: transform 0.12s ease, filter 0.12s ease;
       `;
       btn.onmousedown = () => {
-        btn.style.transform = 'scale(0.96)';
+        btn.style.transform = 'scale(0.95)';
       };
       btn.onmouseup = () => {
         btn.style.transform = 'scale(1)';
+      };
+      btn.onmouseenter = () => {
+        btn.style.filter = 'brightness(1.1)';
+      };
+      btn.onmouseleave = () => {
+        btn.style.filter = 'none';
       };
       return btn;
     };
@@ -534,14 +538,16 @@
 
     btnCopy.addEventListener('click', async () => {
       try {
-        const blob = await (await fetch(dataUrl)).blob();
-        if (navigator.clipboard && navigator.clipboard.write) {
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          showOverlayToast('Copied to clipboard!');
-        } else {
+        if (!navigator.clipboard || !navigator.clipboard.write) {
           showOverlayToast('Copy not supported here - use Download');
+          return;
         }
+
+        const blobPromise = fetch(dataUrl).then(r => r.blob());
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
+        showOverlayToast('Copied to clipboard!');
       } catch (err) {
+        console.error('Failed to copy in content script overlay:', err);
         showOverlayToast('Copy failed - use Download');
       }
     });
@@ -575,9 +581,16 @@
     const closeBtn = document.createElement('button');
     closeBtn.textContent = 'Close';
     closeBtn.style.cssText = `
-      margin-top: 12px; background: none; border: none; color: #8b8b9e;
-      font-size: 12px; cursor: pointer; font-family: inherit;
+      margin-top: 14px; background: none; border: none; color: rgba(235,235,245,0.55);
+      font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit;
+      transition: color 0.15s ease;
     `;
+    closeBtn.onmouseenter = () => {
+      closeBtn.style.color = 'rgba(235,235,245,0.9)';
+    };
+    closeBtn.onmouseleave = () => {
+      closeBtn.style.color = 'rgba(235,235,245,0.55)';
+    };
     closeBtn.addEventListener('click', () => destroyOverlay());
 
     card.append(title, img, actions, closeBtn);
@@ -603,9 +616,12 @@
     const toast = document.createElement('div');
     toast.style.cssText = `
       position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
-      background: #12121a; color: #fff; padding: 10px 16px; border-radius: 8px;
-      font-family: Inter, system-ui, sans-serif; font-size: 13px; font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: auto;
+      background: rgba(26,26,32,0.9); border: 1px solid rgba(255,255,255,0.12);
+      color: #f5f5f7; padding: 10px 18px; border-radius: 999px;
+      font-family: -apple-system, system-ui, sans-serif; font-size: 13px; font-weight: 500;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+      backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+      pointer-events: auto;
     `;
     toast.textContent = message;
     root.appendChild(toast);

@@ -43,31 +43,3 @@ export async function authenticate(req, res, next) {
     return next(new AppError('Authentication failed', 401));
   }
 }
-
-export async function optionalAuth(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      req.user = null;
-      return next();
-    }
-
-    const token = authHeader.split('Bearer ')[1];
-    const admin = getAdmin();
-    const decodedToken = await admin.auth().verifyIdToken(token);
-
-    req.user = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      displayName: decodedToken.displayName,
-      photoURL: decodedToken.photoURL,
-      emailVerified: decodedToken.emailVerified,
-    };
-
-    next();
-  } catch (error) {
-    req.user = null;
-    next();
-  }
-}

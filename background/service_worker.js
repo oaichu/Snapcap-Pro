@@ -98,13 +98,17 @@ async function clearSession() {
 }
 
 // Compare-and-set start mutex: the session may only leave 'idle'.
-async function acquireStartLock(duration, mic, forceVideoOnly) {
+// `tabId` is the tab the user is looking at (reported by the popup that owns
+// the picker). Storing it here is what lets the in-page recording badge be
+// addressed at the RIGHT tab instead of being silently dropped (N-11 bugfix).
+async function acquireStartLock(duration, mic, forceVideoOnly, tabId) {
   const current = await readSession();
   if (current.state !== STATE_IDLE) return false;
   await chrome.storage.local.set({
     [SESSION_KEY]: {
       ...IDLE_SESSION,
       state: STATE_STARTING,
+      tabId: tabId || null,
       startedAt: Date.now(),
       duration,
       mic: !!mic,
@@ -492,8 +496,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case 'START_RECORDING':
-      startRecording(msg.duration, msg.mic, msg.streamId, msg.canRequestAudioTrack).catch(err =>
-        console.error('[SnapCap] startRecording failed:', err)
+      startRecording(msg.duration, msg.mic, msg.streamId, msg.canRequestAudioTrack, msg.tabId).catch(
+        err => console.error('[SnapCap] startRecording failed:', err)
       );
       return;
 
@@ -788,7 +792,7 @@ function normalizeDuration(duration) {
 // origin-locked to that tab so the offscreen document could never consume it.
 // From the popup (extension origin) the stream is bound to the extension, which
 // is exactly what the offscreen document's getUserMedia needs.
-async function startRecording(duration, mic, streamId, canRequestAudioTrack) {
+async function startRecording(duration, mic, streamId, canRequestAudioTrack, tabId) {
   const safeDuration = normalizeDuration(duration);
 
   // Defensive guard: START_RECORDING must always carry the popup's stream id.
@@ -797,9 +801,15 @@ async function startRecording(duration, mic, streamId, canRequestAudioTrack) {
     return;
   }
 
+  // The popup owns the picker (N-11) and reports the tab that is on screen, so
+  // the in-page badge can be shown at the right tab. Fall back to the active
+  // tab if the message did not carry one — the user may have switched tabs
+  // between picking a source and this message landing, so it is best effort.
+  const sessionTabId = tabId || (await getActiveTabId());
+
   await reconcileSession('start-recording');
 
-  if (!(await acquireStartLock(safeDuration, mic, false))) {
+  if (!(await acquireStartLock(safeDuration, mic, false, sessionTabId))) {
     const current = await readSession();
     sendToPopup({
       action: ACTION_RECORDING_BUSY,

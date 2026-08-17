@@ -295,18 +295,21 @@ document.addEventListener('DOMContentLoaded', () => {
   btnCopy.addEventListener('click', () => {
     if (currentMode !== 'image') return;
 
-    canvas.toBlob(blob => {
-      if (blob && navigator.clipboard && navigator.clipboard.write) {
-        navigator.clipboard
-          .write([new ClipboardItem({ 'image/png': blob })])
-          .then(() => {
-            showNotification('Copied to clipboard!');
-          })
-          .catch(() => {
-            showNotification('Failed to copy');
-          });
-      }
-    });
+    if (!navigator.clipboard || !navigator.clipboard.write) {
+      showNotification('Clipboard not supported');
+      return;
+    }
+
+    const blobPromise = new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    navigator.clipboard
+      .write([new ClipboardItem({ 'image/png': blobPromise })])
+      .then(() => {
+        showNotification('Copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy to clipboard:', err);
+        showNotification('Failed to copy');
+      });
   });
 
   // Share
