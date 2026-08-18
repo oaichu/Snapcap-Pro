@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Snapcap Pro Editor</title>
+    <script type="module" crossorigin src="/editor/editor.js"></script>
+    <link rel="modulepreload" crossorigin href="/modulepreload-polyfill/modulepreload-polyfill.js">
+    <link rel="stylesheet" crossorigin href="/editor/editor.css">
+  </head>
+  <body>
+    <div class="editor">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </div>
+            <div class="logo-brand">
+              <span class="logo-text">Snapcap</span>
+              <span class="logo-pro-badge">PRO</span>
+            </div>
+          </div>
+          <nav class="tabs">
+            <button class="tab active" data-tab="image">Image</button>
+            <button class="tab" data-tab="video">Video</button>
+            <button class="tab" data-tab="history">History</button>
+          </nav>
+        </div>
+        <div class="header-right">
+          <button class="btn-icon" id="btnCopy" title="Copy to clipboard">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+          <button class="btn-icon" id="btnShare" title="Share">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          </button>
+          <button class="btn-primary" id="btnDownload">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span id="downloadLabel">Download PNG</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main">
+        <!-- Image Panel -->
+        <div class="panel active" id="panelImage">
+          <!-- Toolbar -->
+          <aside class="toolbar">
+            <div class="tool-group">
+              <button class="tool active" data-tool="pencil" title="Pencil">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </button>
+              <button class="tool" data-tool="arrow" title="Arrow">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="5" y1="19" x2="19" y2="5" />
+                  <polyline points="9 5 19 5 19 15" />
+                </svg>
+              </button>
+              <button class="tool" data-tool="rect" title="Rectangle">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                </svg>
+              </button>
+              <button class="tool" data-tool="circle" title="Circle">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </button>
+              <button class="tool" data-tool="text" title="Text">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="4 7 4 4 20 4 20 7" />
+                  <line x1="9" y1="20" x2="15" y2="20" />
+                  <line x1="12" y1="4" x2="12" y2="20" />
+                </svg>
+              </button>
+              <button class="tool" data-tool="blur" title="Blur">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M7 7l10 10M17 7L7 17" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="tool-group colors">
+              <button
+                class="color active"
+                data-color="#ef4444"
+                style="background: #ef4444"
+              ></button>
+              <button class="color" data-color="#3b82f6" style="background: #3b82f6"></button>
+              <button class="color" data-color="#22c55e" style="background: #22c55e"></button>
+              <button class="color" data-color="#f59e0b" style="background: #f59e0b"></button>
+              <button class="color" data-color="#8b5cf6" style="background: #8b5cf6"></button>
+              <button class="color" data-color="#ffffff" style="background: #ffffff"></button>
+              <input type="color" id="customColor" value="#ef4444" class="color-picker" />
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="tool-group">
+              <button class="tool" data-size="2" title="Small">
+                <span class="size-dot" style="width: 4px; height: 4px"></span>
+              </button>
+              <button class="tool active" data-size="4" title="Medium">
+                <span class="size-dot" style="width: 7px; height: 7px"></span>
+              </button>
+              <button class="tool" data-size="8" title="Large">
+                <span class="size-dot" style="width: 10px; height: 10px"></span>
+              </button>
+              <button class="tool" data-size="14" title="Extra Large">
+                <span class="size-dot" style="width: 14px; height: 14px"></span>
+              </button>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="tool-group">
+              <button class="tool" id="btnUndo" title="Undo">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M9 14L4 9l5-5" />
+                  <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+                </svg>
+              </button>
+              <button class="tool" id="btnRedo" title="Redo">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M15 14l5-5-5-5" />
+                  <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
+                </svg>
+              </button>
+            </div>
+          </aside>
+
+          <!-- Canvas Area -->
+          <div class="canvas-area">
+            <div class="canvas-container">
+              <canvas id="studioCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Panel -->
+        <div class="panel" id="panelVideo">
+          <div class="video-container">
+            <video id="playerVideo" controls></video>
+            <div class="video-actions">
+              <button class="btn-secondary" id="btnCaptureFrame">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                  />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                Capture Frame
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Panel -->
+        <div class="panel" id="panelHistory">
+          <div class="history-container">
+            <h2>My Captures</h2>
+            <div class="history-grid" id="historyGrid"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Text Input Modal -->
+    <div class="modal" id="textModal" style="display: none">
+      <div class="modal-content">
+        <h3>Add Text</h3>
+        <textarea id="textInput" placeholder="Enter text..." maxlength="500"></textarea>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="textCancel">Cancel</button>
+          <button class="btn-primary" id="textConfirm">Add</button>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

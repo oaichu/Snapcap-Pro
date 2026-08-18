@@ -20,7 +20,8 @@
     "Blob": "readonly",
     "URL": "readonly",
     "Image": "readonly",
-    "ClipboardItem": "readonly"
+    "ClipboardItem": "readonly",
+    "__ENV": "readonly"
   },
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
