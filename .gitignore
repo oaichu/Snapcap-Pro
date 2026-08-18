@@ -1,1 +1,4 @@
-Nothing should be ignored based on the provided file changes. The modification of `.github/workflows/extension-ci.yml` is a source/config file that should be tracked in version control.
+```
+# Editor/IDE files
+.prettierignore
+```
