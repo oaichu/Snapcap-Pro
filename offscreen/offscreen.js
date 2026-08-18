@@ -224,7 +224,10 @@ async function startRecording(streamId, duration, includeMic, canRequestAudioTra
       try {
         stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
       } catch (audioErr) {
-        console.warn('[SnapCap offscreen] Audio capture failed, falling back to video-only:', audioErr);
+        console.warn(
+          '[SnapCap offscreen] Audio capture failed, falling back to video-only:',
+          audioErr
+        );
         const videoOnlyConstraints = {
           video: {
             mandatory: {

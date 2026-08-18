@@ -496,9 +496,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case 'START_RECORDING':
-      startRecording(msg.duration, msg.mic, msg.streamId, msg.canRequestAudioTrack, msg.tabId).catch(
-        err => console.error('[SnapCap] startRecording failed:', err)
-      );
+      startRecording(
+        msg.duration,
+        msg.mic,
+        msg.streamId,
+        msg.canRequestAudioTrack,
+        msg.tabId
+      ).catch(err => console.error('[SnapCap] startRecording failed:', err));
       return;
 
     case ACTION_STOP_RECORDING_TRIGGER:

@@ -4,6 +4,22 @@
 
 ![SnapCap Banner](icons/icon128.png)
 
+## ⚖️ Legal & Compliance
+
+For information about licensing, privacy, and commercial use:
+
+- **License**: [MIT License](/LICENSE) - Free for commercial and personal use
+- **Privacy Policy**: [/legal/PRIVACY_POLICY.md](/legal/PRIVACY_POLICY.md)
+- **Terms of Service**: [/legal/TERMS_OF_SERVICE.md](/legal/TERMS_OF_SERVICE.md)
+- **Cookie Policy**: [/legal/COOKIE_POLICY.md](/legal/COOKIE_POLICY.md)
+- **Security Policy**: [/SECURITY.md](/SECURITY.md)
+- **Third-Party Attribution**: [/ATTRIBUTION.md](/ATTRIBUTION.md)
+- **Compliance Status**: [/COMPLIANCE_STATUS.md](/COMPLIANCE_STATUS.md)
+
+**Commercial Use**: ✅ This software is licensed under the MIT License, which permits commercial use, modification, and distribution. See [COMMERCIAL_COMPLIANCE_CHECKLIST.md](/legal/COMMERCIAL_COMPLIANCE_CHECKLIST.md) for deployment requirements.
+
+---
+
 ## ✨ Why SnapCap?
 
 Existing web store extensions are often bloated, closed-source, or lock essential features behind paywalls. **SnapCap** is built with modern **Manifest V3**, **Vanilla JS**, and **HTML5 Canvas**, delivering a 60fps smooth experience with **zero external npm dependencies** and a total size under **1MB**.
