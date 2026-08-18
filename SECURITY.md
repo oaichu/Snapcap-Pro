@@ -74,9 +74,9 @@ Our team follows these security practices:
 
 ### Past Security Advisories
 
-| Date | Severity | Description | Status |
-|------|----------|-------------|--------|
-| [TODO] | [TODO] | [TODO] | [TODO] |
+| Date   | Severity | Description | Status |
+| ------ | -------- | ----------- | ------ |
+| [TODO] | [TODO]   | [TODO]      | [TODO] |
 
 ### Contact
 

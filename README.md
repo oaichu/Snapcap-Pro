@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](/LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://chrome.google.com/webstore)
-[![Size](https://img.shields.io/badge/Size-%3C1MB-lightgrey.svg)]()
+[![Size](https://img.shields.io/badge/Size-%3C1MB-lightgrey.svg)](<>)
 
 ---
 

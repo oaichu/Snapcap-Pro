@@ -6,31 +6,31 @@ This document lists all third-party libraries, tools, and assets used in SnapCap
 
 ### Production Dependencies (Backend)
 
-| Package | Version | License | Repository |
-|---------|---------|---------|------------|
-| express | ^4.18.2 | MIT | https://github.com/expressjs/express |
-| cors | ^2.8.5 | MIT | https://github.com/expressjs/cors |
-| helmet | ^7.1.0 | MIT | https://github.com/helmetjs/helmet |
-| firebase-admin | ^12.0.0 | Apache-2.0 | https://github.com/firebase/firebase-admin-node |
-| express-rate-limit | ^7.1.5 | MIT | https://github.com/nfriedly/express-rate-limit |
-| uuid | ^9.0.1 | MIT | https://github.com/uuidjs/uuid |
-| dotenv | ^16.4.1 | BSD-2-Clause | https://github.com/motdotla/dotenv |
+| Package            | Version | License      | Repository                                      |
+| ------------------ | ------- | ------------ | ----------------------------------------------- |
+| express            | ^4.18.2 | MIT          | https://github.com/expressjs/express            |
+| cors               | ^2.8.5  | MIT          | https://github.com/expressjs/cors               |
+| helmet             | ^7.1.0  | MIT          | https://github.com/helmetjs/helmet              |
+| firebase-admin     | ^12.0.0 | Apache-2.0   | https://github.com/firebase/firebase-admin-node |
+| express-rate-limit | ^7.1.5  | MIT          | https://github.com/nfriedly/express-rate-limit  |
+| uuid               | ^9.0.1  | MIT          | https://github.com/uuidjs/uuid                  |
+| dotenv             | ^16.4.1 | BSD-2-Clause | https://github.com/motdotla/dotenv              |
 
 ### Development Dependencies (Root)
 
-| Package | Version | License | Repository |
-|---------|---------|---------|------------|
-| vite | ^5.0.0 | MIT | https://github.com/vitejs/vite |
-| terser | ^5.24.0 | BSD-2-Clause | https://github.com/terser/terser |
-| eslint | ^8.56.0 | MIT | https://github.com/eslint/eslint |
-| prettier | ^3.0.0 | MIT | https://github.com/prettier/prettier |
+| Package  | Version | License      | Repository                           |
+| -------- | ------- | ------------ | ------------------------------------ |
+| vite     | ^5.0.0  | MIT          | https://github.com/vitejs/vite       |
+| terser   | ^5.24.0 | BSD-2-Clause | https://github.com/terser/terser     |
+| eslint   | ^8.56.0 | MIT          | https://github.com/eslint/eslint     |
+| prettier | ^3.0.0  | MIT          | https://github.com/prettier/prettier |
 
 ### Development Dependencies (Backend)
 
-| Package | Version | License | Repository |
-|---------|---------|---------|------------|
-| eslint | ^8.56.0 | MIT | https://github.com/eslint/eslint |
-| prettier | ^3.0.0 | MIT | https://github.com/prettier/prettier |
+| Package  | Version | License | Repository                           |
+| -------- | ------- | ------- | ------------------------------------ |
+| eslint   | ^8.56.0 | MIT     | https://github.com/eslint/eslint     |
+| prettier | ^3.0.0  | MIT     | https://github.com/prettier/prettier |
 
 ## Transitive Dependencies
 

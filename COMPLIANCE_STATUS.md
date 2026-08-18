@@ -13,19 +13,19 @@ SnapCap has **foundational legal documentation in place** but requires **complet
 
 ### Overall Readiness: ~60% Complete
 
-| Category | Status | Priority |
-|----------|--------|----------|
-| Software License | ✅ Complete | Critical |
-| Privacy Policy | ⚠️ Draft (needs completion) | Critical |
-| Terms of Service | ⚠️ Draft (needs completion) | Critical |
-| Cookie Policy | ⚠️ Draft (needs completion) | High |
-| Security Policy | ⚠️ Draft (needs completion) | High |
-| Third-Party Attribution | ⚠️ Draft (needs completion) | Medium |
-| Business Registration | ❌ Not Started | Critical |
-| Trademark Protection | ❌ Not Started | Medium |
-| GDPR Compliance | ⚠️ Partial | High (if serving EU) |
-| CCPA Compliance | ⚠️ Partial | High (if serving CA) |
-| Chrome Web Store Ready | ❌ Not Ready | Critical |
+| Category                | Status                      | Priority             |
+| ----------------------- | --------------------------- | -------------------- |
+| Software License        | ✅ Complete                 | Critical             |
+| Privacy Policy          | ⚠️ Draft (needs completion) | Critical             |
+| Terms of Service        | ⚠️ Draft (needs completion) | Critical             |
+| Cookie Policy           | ⚠️ Draft (needs completion) | High                 |
+| Security Policy         | ⚠️ Draft (needs completion) | High                 |
+| Third-Party Attribution | ⚠️ Draft (needs completion) | Medium               |
+| Business Registration   | ❌ Not Started              | Critical             |
+| Trademark Protection    | ❌ Not Started              | Medium               |
+| GDPR Compliance         | ⚠️ Partial                  | High (if serving EU) |
+| CCPA Compliance         | ⚠️ Partial                  | High (if serving CA) |
+| Chrome Web Store Ready  | ❌ Not Ready                | Critical             |
 
 ---
 
@@ -103,23 +103,23 @@ SnapCap has **foundational legal documentation in place** but requires **complet
 
 ### ✅ Existing Documents
 
-| Document | Location | Status |
-|----------|----------|--------|
-| MIT License | `/LICENSE` | Complete |
-| Privacy Policy | `/legal/PRIVACY_POLICY.md` | Draft - needs TODOs filled |
-| Terms of Service | `/legal/TERMS_OF_SERVICE.md` | Draft - needs TODOs filled + legal review |
-| Legal Hosting Guide | `/LEGAL_HOSTING_GUIDE.md` | Complete (reference only) |
-| Chrome Web Store Checklist | `/CHROME_WEBSTORE_CHECKLIST.md` | Complete (reference only) |
+| Document                   | Location                        | Status                                    |
+| -------------------------- | ------------------------------- | ----------------------------------------- |
+| MIT License                | `/LICENSE`                      | Complete                                  |
+| Privacy Policy             | `/legal/PRIVACY_POLICY.md`      | Draft - needs TODOs filled                |
+| Terms of Service           | `/legal/TERMS_OF_SERVICE.md`    | Draft - needs TODOs filled + legal review |
+| Legal Hosting Guide        | `/LEGAL_HOSTING_GUIDE.md`       | Complete (reference only)                 |
+| Chrome Web Store Checklist | `/CHROME_WEBSTORE_CHECKLIST.md` | Complete (reference only)                 |
 
 ### 🆕 New Documents Created
 
-| Document | Location | Status |
-|----------|----------|--------|
-| Cookie Policy | `/legal/COOKIE_POLICY.md` | Draft - needs TODOs filled |
+| Document                        | Location                                    | Status                          |
+| ------------------------------- | ------------------------------------------- | ------------------------------- |
+| Cookie Policy                   | `/legal/COOKIE_POLICY.md`                   | Draft - needs TODOs filled      |
 | Commercial Compliance Checklist | `/legal/COMMERCIAL_COMPLIANCE_CHECKLIST.md` | Complete (this is your roadmap) |
-| Security Policy | `/SECURITY.md` | Draft - needs TODOs filled |
-| Third-Party Attribution | `/ATTRIBUTION.md` | Draft - needs TODOs filled |
-| Compliance Status Summary | `/COMPLIANCE_STATUS.md` | This document |
+| Security Policy                 | `/SECURITY.md`                              | Draft - needs TODOs filled      |
+| Third-Party Attribution         | `/ATTRIBUTION.md`                           | Draft - needs TODOs filled      |
+| Compliance Status Summary       | `/COMPLIANCE_STATUS.md`                     | This document                   |
 
 ---
 
@@ -182,25 +182,25 @@ SnapCap has **foundational legal documentation in place** but requires **complet
 
 ### One-Time Costs
 
-| Item | Estimated Cost |
-|------|----------------|
-| Chrome Web Store Developer Account | $5 |
-| Business Registration (varies by state/country) | $50-500 |
-| Trademark Application (per class) | $250-400 |
-| Legal Review (attorney, estimated) | $500-2,000 |
-| Domain Name + SSL (first year) | $10-20 |
-| **Total One-Time** | **$815-2,925** |
+| Item                                            | Estimated Cost |
+| ----------------------------------------------- | -------------- |
+| Chrome Web Store Developer Account              | $5             |
+| Business Registration (varies by state/country) | $50-500        |
+| Trademark Application (per class)               | $250-400       |
+| Legal Review (attorney, estimated)              | $500-2,000     |
+| Domain Name + SSL (first year)                  | $10-20         |
+| **Total One-Time**                              | **$815-2,925** |
 
 ### Recurring Costs
 
-| Item | Frequency | Estimated Cost |
-|------|-----------|----------------|
-| Legal Document Hosting | Monthly | $0-20 (free tier available) |
-| Domain Renewal | Annual | $10-20 |
-| Business Insurance | Annual | $500-2,000 |
-| Trademark Renewal | Every 5-10 years | $300-500 |
-| Accounting/Tax Services | Monthly | $100-300 |
-| **Total Monthly** | **~$100-340/month** |
+| Item                    | Frequency           | Estimated Cost              |
+| ----------------------- | ------------------- | --------------------------- |
+| Legal Document Hosting  | Monthly             | $0-20 (free tier available) |
+| Domain Renewal          | Annual              | $10-20                      |
+| Business Insurance      | Annual              | $500-2,000                  |
+| Trademark Renewal       | Every 5-10 years    | $300-500                    |
+| Accounting/Tax Services | Monthly             | $100-300                    |
+| **Total Monthly**       | **~$100-340/month** |
 
 ---
 
@@ -250,13 +250,13 @@ SnapCap has **foundational legal documentation in place** but requires **complet
 
 ## Contact & Responsibility
 
-| Role | Person | Status |
-|------|--------|--------|
-| Project Manager | [TODO] | Assign owner |
-| Legal Review | [TODO] | Engage attorney |
-| Business Registration | [TODO] | Assign owner |
-| Chrome Web Store Submission | [TODO] | Assign owner |
-| Security Contact | [TODO] | Assign owner |
+| Role                        | Person | Status          |
+| --------------------------- | ------ | --------------- |
+| Project Manager             | [TODO] | Assign owner    |
+| Legal Review                | [TODO] | Engage attorney |
+| Business Registration       | [TODO] | Assign owner    |
+| Chrome Web Store Submission | [TODO] | Assign owner    |
+| Security Contact            | [TODO] | Assign owner    |
 
 ---
 
@@ -284,6 +284,6 @@ Laws and regulations vary by jurisdiction and change frequently. You must consul
 
 **Document Control**
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0.0 | [TODO] | [TODO] | Initial draft |
+| Version | Date   | Author | Changes       |
+| ------- | ------ | ------ | ------------- |
+| 1.0.0   | [TODO] | [TODO] | Initial draft |
