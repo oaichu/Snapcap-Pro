@@ -1,14 +1,34 @@
-# 🚀 SnapCap - Open-Source Screenshot & 30s Screen Recorder Extension
+# 🚀 SnapCap - Free Open-Source Screenshot & 30s Screen Recorder Extension
 
-> An ultra-lightweight, high-performance, open-source Chrome extension for full-page screenshot capture, cropped region selection, and quick 30-second screen video recording.
+> An ultra-lightweight, high-performance, **100% free** Chrome extension for full-page screenshot capture, cropped region selection, and quick 30-second screen video recording. **No paywalls. No premium features. Forever free for the community.**
 
 ![SnapCap Banner](icons/icon128.png)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](/LICENSE)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://chrome.google.com/webstore)
+[![Size](https://img.shields.io/badge/Size-%3C1MB-lightgrey.svg)]()
+
+---
+
+## 💝 100% Free for Everyone
+
+**SnapCap is completely free for the community — no paywalls, no locked features, no subscriptions.**
+
+- ✅ **All features unlocked**: Full-page capture, screen recording, blur/redaction, cloud sync — everything is free
+- ✅ **Generous limits**: No artificial restrictions on storage or captures
+- ✅ **Offline-first**: Works entirely in your browser with no account required
+- ✅ **Open source**: Built transparently with zero external npm dependencies
+- ✅ **Privacy-focused**: No screenshots or recordings leave your device unless you explicitly opt in
+
+The "Pro" labels in the UI are kept only as feature names — **every single feature is available on the free tier**.
+
+---
+
 ## ⚖️ Legal & Compliance
 
-For information about licensing, privacy, and commercial use:
+This project is licensed under the **MIT License** and is free for personal and commercial use.
 
-- **License**: [MIT License](/LICENSE) - Free for commercial and personal use
+- **License**: [MIT License](/LICENSE) - Free forever for everyone
 - **Privacy Policy**: [/legal/PRIVACY_POLICY.md](/legal/PRIVACY_POLICY.md)
 - **Terms of Service**: [/legal/TERMS_OF_SERVICE.md](/legal/TERMS_OF_SERVICE.md)
 - **Cookie Policy**: [/legal/COOKIE_POLICY.md](/legal/COOKIE_POLICY.md)
@@ -16,13 +36,13 @@ For information about licensing, privacy, and commercial use:
 - **Third-Party Attribution**: [/ATTRIBUTION.md](/ATTRIBUTION.md)
 - **Compliance Status**: [/COMPLIANCE_STATUS.md](/COMPLIANCE_STATUS.md)
 
-**Commercial Use**: ✅ This software is licensed under the MIT License, which permits commercial use, modification, and distribution. See [COMMERCIAL_COMPLIANCE_CHECKLIST.md](/legal/COMMERCIAL_COMPLIANCE_CHECKLIST.md) for deployment requirements.
-
 ---
 
 ## ✨ Why SnapCap?
 
 Existing web store extensions are often bloated, closed-source, or lock essential features behind paywalls. **SnapCap** is built with modern **Manifest V3**, **Vanilla JS**, and **HTML5 Canvas**, delivering a 60fps smooth experience with **zero external npm dependencies** and a total size under **1MB**.
+
+Built by the community, for the community.
 
 ---
 
@@ -106,24 +126,39 @@ You can test and install SnapCap in any Chromium-based browser (Google Chrome, M
 
 ---
 
-## 📄 License
+## 📄 License & Community
 
 Distributed under the **MIT License** (see [LICENSE](LICENSE)).
 
-## 🆓 100% Free for the Community
+**SnapCap is 100% free for the community — forever.** This is an open-source project built by and for users who believe in free, transparent, and privacy-respecting software.
 
-SnapCap is **completely free for everyone — no paywalls, no locked features.** The "Pro" name is kept purely as a feature label; every feature (full-page capture, screen recording, blur/redaction, cloud sync, priority support) and every generous storage/capture limit is unlocked for all users on the free tier.
+- 🆓 **No paywalls**: Every feature is unlocked for everyone
+- 🔓 **No premium tiers**: No hidden costs or subscriptions
+- 🌍 **Community-driven**: Contributions welcome from everyone
+- 🔒 **Privacy-first**: Your data stays on your device
 
-- The extension is **offline-first**: screenshots, recording and editing all run locally in your browser, with no account required and no captures or recordings uploaded anywhere.
-- An **optional, free backend API** (`backend/`) is provided for those who want cloud sync / storage. It requires a Firebase project (a `serviceAccountKey.json`) and is fully free — no payment integration is needed.
+### Contributing
 
-### 🔒 Privacy note
+We welcome contributions from the community! Whether it's bug reports, feature requests, documentation improvements, or code contributions — all help make SnapCap better for everyone.
 
-The extension UI (`popup.html`, `editor.html`) makes **zero external network requests**: it renders
-with the operating system's native font stack, so no web font (and no CDN) is contacted. The
-manifest CSP no longer allow-lists any font host. **No screenshots, recordings or user content ever
-leave your device** unless you explicitly opt in to the cloud sync backend.
+See our contribution guidelines to get started.
+
+### Support
+
+- 💬 **Issues**: Report bugs or request features on GitHub Issues
+- 📧 **Contact**: Reach out via email for questions or support
+- 📖 **Documentation**: Check out our guides and FAQs
+
+---
+
+### 🔒 Privacy Promise
+
+The extension UI (`popup.html`, `editor.html`) makes **zero external network requests**: it renders with the operating system's native font stack, so no web font (and no CDN) is contacted. The manifest CSP no longer allow-lists any font host. **No screenshots, recordings or user content ever leave your device** unless you explicitly opt in to the cloud sync backend.
 
 > Resolved in v1.1.0: the Google Fonts (Inter) CDN dependency was removed entirely.
 
 See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the v1.1.0 release summary.
+
+---
+
+**Built with ❤️ by the community, for the community.**
