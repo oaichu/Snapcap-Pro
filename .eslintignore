@@ -1,0 +1,9 @@
+node_modules/
+dist/
+release/
+backend/
+webstore-assets/
+.test-profile/
+coverage/
+temp_render.html
+temp_banner_render.html

@@ -22,7 +22,6 @@ let stoppedBadge = null;
 let offscreenStopAcked = 0;
 let offscreenCreateCount = 0;
 let offscreenCloseCount = 0;
-let sessionTabSeen = null;
 let openEditorUrl = null;
 const sentMessages = [];
 const createdOffscreen = { created: false };
@@ -166,7 +165,6 @@ await sleep(600); // offscreen warm-up + relay + badge
 const state1 = await send({ action: 'GET_RECORDING_STATE', target: 'sw' });
 check('session becomes RECORDING', state1.res && state1.res.state === 'recording', JSON.stringify(state1.res));
 check('session carries tabId 42', state1.res && state1.res.tabId === 42, 'tabId=' + (state1.res && state1.res.tabId));
-sessionTabSeen = state1.res && state1.res.tabId;
 
 // 3. The in-page badge MUST be sent to tab 42 (the fix under test)
 check(
