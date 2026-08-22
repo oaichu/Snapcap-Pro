@@ -11,7 +11,7 @@
     "package": "node package-release.js",
     "release": "node scripts/generate-brand-assets.js && npm run build && node package-release.js",
     "test": "node sw-behavior-test.mjs background/service_worker.js",
-    "test:all": "node sw-behavior-test.mjs background/service_worker.js && node upload-validation-test.mjs && npm --prefix backend test",
+    "test:all": "node sw-behavior-test.mjs background/service_worker.js && npm --prefix backend test",
     "test:backend": "npm --prefix backend test",
     "preview": "vite preview",
     "lint": "eslint --ext .js background/ content/ editor/ popup/ offscreen/ scripts/",

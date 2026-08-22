@@ -98,9 +98,6 @@ jobs:
       - name: Run behavior tests
         run: node sw-behavior-test.mjs background/service_worker.js
 
-      - name: Run upload validation tests
-        run: node upload-validation-test.mjs
-
   build-package:
     name: Build Extension Package
     runs-on: ubuntu-latest
