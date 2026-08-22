@@ -1,23 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- vidIQ Electric Cyan to Cobalt Blue Gradient -->
-    <linearGradient id="vidiqGradTop" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- SnapCap Electric Cyan to Cobalt Blue Gradient -->
+    <linearGradient id="snapGradTop" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00F5FF"/>
       <stop offset="35%" stop-color="#0066FF"/>
       <stop offset="85%" stop-color="#7000FF"/>
       <stop offset="100%" stop-color="#8B00FF"/>
     </linearGradient>
 
-    <!-- vidIQ Neon Violet to Laser Magenta Gradient -->
-    <linearGradient id="vidiqGradBottom" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- SnapCap Neon Violet to Laser Magenta Gradient -->
+    <linearGradient id="snapGradBottom" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#7000FF"/>
       <stop offset="45%" stop-color="#FF007A"/>
       <stop offset="85%" stop-color="#FF3366"/>
       <stop offset="100%" stop-color="#FF6B00"/>
     </linearGradient>
 
-    <!-- Center Play/Iris Core Accent (Laser Emerald to Cyan) -->
-    <linearGradient id="vidiqPlayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Center Play/Iris Core Accent -->
+    <linearGradient id="snapPlayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF"/>
       <stop offset="100%" stop-color="#E0F7FF"/>
     </linearGradient>
@@ -45,20 +45,20 @@
     </filter>
   </defs>
 
-  <!-- High-Energy Freestanding vidIQ-Style Monogram "S" & Play Velocity Blades -->
+  <!-- High-Energy Freestanding Monogram "S" & Play Velocity Blades -->
   <g filter="url(#subtleDropShadow)" transform="translate(0, 0)">
     
     <!-- Outer Neon Ambient Aura -->
     <g opacity="0.4" filter="url(#neonBloom)">
       <!-- Top Wing Outline -->
-      <path d="M 120 180 C 120 110 175 60 256 60 L 360 60 C 395 60 415 90 405 125 C 395 155 365 175 330 175 L 235 175 C 190 175 170 200 160 230 L 320 230 C 385 230 425 275 405 340 L 260 340 Z" fill="url(#vidiqGradTop)"/>
+      <path d="M 120 180 C 120 110 175 60 256 60 L 360 60 C 395 60 415 90 405 125 C 395 155 365 175 330 175 L 235 175 C 190 175 170 200 160 230 L 320 230 C 385 230 425 275 405 340 L 260 340 Z" fill="url(#snapGradTop)"/>
       <!-- Bottom Wing Outline -->
-      <path d="M 392 332 C 392 402 337 452 256 452 L 152 452 C 117 452 97 422 107 387 C 117 357 147 337 182 337 L 277 337 C 322 337 342 312 352 282 L 192 282 C 127 282 87 237 107 172 L 252 172 Z" fill="url(#vidiqGradBottom)"/>
+      <path d="M 392 332 C 392 402 337 452 256 452 L 152 452 C 117 452 97 422 107 387 C 117 357 147 337 182 337 L 277 337 C 322 337 342 312 352 282 L 192 282 C 127 282 87 237 107 172 L 252 172 Z" fill="url(#snapGradBottom)"/>
     </g>
 
     <!-- 1. Top Dynamic Aerodynamic Ribbon (Loop 1 of S) -->
     <path d="M 120 175 C 120 105 175 56 256 56 L 364 56 C 398 56 418 86 408 120 C 398 152 368 172 332 172 L 232 172 C 185 172 165 198 155 230 L 330 230 C 395 230 435 278 412 345 L 255 345 L 120 175 Z" 
-          fill="url(#vidiqGradTop)"/>
+          fill="url(#snapGradTop)"/>
 
     <!-- Specular Highlight Arc on Top Ribbon -->
     <path d="M 132 165 C 132 110 180 68 256 68 L 360 68 C 385 68 398 86 392 110 C 380 92 350 82 320 82 L 240 82 C 180 82 145 115 132 165 Z" 
@@ -66,7 +66,7 @@
 
     <!-- 2. Bottom Dynamic Aerodynamic Ribbon (Loop 2 of S / Video Speed Slash) -->
     <path d="M 392 337 C 392 407 337 456 256 456 L 148 456 C 114 456 94 426 104 392 C 114 360 144 340 180 340 L 280 340 C 327 340 347 314 357 282 L 182 282 C 117 282 77 234 100 167 L 257 167 L 392 337 Z" 
-          fill="url(#vidiqGradBottom)"/>
+          fill="url(#snapGradBottom)"/>
 
     <!-- Specular Highlight on Bottom Ribbon -->
     <path d="M 380 347 C 380 402 332 444 256 444 L 152 444 C 127 444 114 426 120 402 C 132 420 162 430 192 430 L 272 430 C 332 430 367 397 380 347 Z" 
@@ -77,7 +77,7 @@
       <!-- Soft Shadow Behind Play Button -->
       <polygon points="26,14 68,40 26,66" fill="rgba(0, 0, 0, 0.45)"/>
       <!-- Pure Crisp White Play Glyph -->
-      <polygon points="24,12 66,40 24,68" fill="url(#vidiqPlayGrad)" filter="url(#subtleDropShadow)"/>
+      <polygon points="24,12 66,40 24,68" fill="url(#snapPlayGrad)" filter="url(#subtleDropShadow)"/>
     </g>
 
     <!-- 4. Dynamic Speed Spark / Flash Energy Star (Top Right) -->

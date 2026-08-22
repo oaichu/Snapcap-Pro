@@ -1,12 +1,12 @@
 # SnapCap Pro v1.1.0 — Official Release Notes
 
-**Summary:** SnapCap Pro is now **100% free and open-source for the community** under the **MIT License**. This release introduces a complete brand redesign (vidIQ-style High-Velocity Creator Studio aesthetic), bulletproof Manifest V3 capture & recording engines, and a comprehensive local History & Storage Manager.
+**Summary:** SnapCap Pro is now **100% free and open-source for the community** under the **MIT License**. This release introduces a complete brand redesign (High-Velocity Creator Studio aesthetic), bulletproof Manifest V3 capture & recording engines, and a comprehensive local History & Storage Manager.
 
 ---
 
 ## 🌟 What's New in v1.1.0
 
-### 1. 🎨 vidIQ-Style Creator Studio Branding
+### 1. 🎨 High-Velocity Creator Studio Branding
 
 - **Master Freestanding Vector Logo**: Pure borderless, high-energy monogram "S" + creator play slash glyph on 100% transparent background.
 - **High-DPI Retina Icon Suite**: Re-rendered 16x16, 48x48, 128x128, and 512x512 PNG assets.
