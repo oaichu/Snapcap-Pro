@@ -11,7 +11,7 @@ import fs from 'fs';
 import vm from 'vm';
 
 const file = process.argv[2];
-const expectBadge = process.env.EXPECT_BADGE === '1';
+const expectBadge = process.env.EXPECT_BADGE !== '0';
 const code = fs.readFileSync(file, 'utf8');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));

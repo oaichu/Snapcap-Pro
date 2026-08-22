@@ -14,21 +14,13 @@
         <div class="header-left">
           <div class="logo">
             <div class="logo-icon">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-                />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
+              <img
+                src="../icons/icon48.png"
+                width="26"
+                height="26"
+                style="display: block"
+                alt="Snapcap Pro"
+              />
             </div>
             <div class="logo-brand">
               <span class="logo-text">Snapcap</span>
@@ -300,7 +292,36 @@
         <!-- History Panel -->
         <div class="panel" id="panelHistory">
           <div class="history-container">
-            <h2>My Captures</h2>
+            <div class="history-header">
+              <div class="history-header-titles">
+                <h2>My Captures</h2>
+                <p class="history-subtitle" id="historyStats">0 items stored locally</p>
+              </div>
+              <div class="history-header-actions">
+                <button
+                  class="btn-danger-outline"
+                  id="btnClearHistory"
+                  title="Clear all local captures to free memory"
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path
+                      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    ></path>
+                  </svg>
+                  <span>Clear All History</span>
+                </button>
+              </div>
+            </div>
             <div class="history-grid" id="historyGrid"></div>
           </div>
         </div>

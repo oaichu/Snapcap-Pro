@@ -12,4 +12,6 @@ backend/serviceAccountKey.json
 # firestore.rules / storage.rules / firebase.json / firestore.indexes.json are now
 # hand-authored, reviewed security artifacts and MUST be tracked in version control.
 # Only the transient TTL scratch file emitted by setup-firebase.sh stays ignored.
-firestore.ttl.json
+# Release artifacts
+release/
+*.zip

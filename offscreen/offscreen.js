@@ -22,8 +22,6 @@ let recordedChunks = [];
 let recordTimeout = null;
 let hardCapTimeout = null;
 
-// Hoisted out of the try block so every teardown path can reach it.
-let stream = null;
 // Registry of EVERY MediaStream we acquired (desktop + mic). releaseStream()
 // is the single place that stops tracks (H-4).
 const activeStreams = [];
@@ -129,7 +127,6 @@ function releaseStream() {
       /* stream already dead */
     }
   }
-  stream = null;
 }
 
 function clearRecordTimeout() {
@@ -164,7 +161,7 @@ function pickMimeType(hasAudio) {
 // ---------------------------------------------------------------------------
 // Recording
 // ---------------------------------------------------------------------------
-async function startRecording(streamId, duration, includeMic, canRequestAudioTrack) {
+async function startRecording(streamId, duration, includeMic, _canRequestAudioTrack) {
   if (isRecording() || saveInFlight) {
     sendToSw({ action: ACTION_RECORDING_BUSY, reason: 'already_recording' });
     return;
@@ -173,82 +170,66 @@ async function startRecording(streamId, duration, includeMic, canRequestAudioTra
   finalized = false;
   recordingArmed = false;
   pendingStop = false;
-  // The teardown latch is per-recording, not per-document: a warm document
-  // that already saw one teardown must not be permanently disarmed (N-1).
   teardownStarted = false;
   recordedChunks = [];
   clearTimers();
   releaseStream();
 
-  // ONE getUserMedia call. The desktop stream id is one-shot: a second
-  // getUserMedia on the same id can never succeed (C-1), so the audio block is
-  // only included when the picker actually granted an audio track.
-  const constraints = {
-    video: {
-      mandatory: {
-        chromeMediaSource: 'desktop',
-        chromeMediaSourceId: streamId,
-        maxFrameRate: 60,
-      },
-    },
-  };
-
-  if (canRequestAudioTrack === true) {
-    constraints.audio = {
-      mandatory: {
-        chromeMediaSource: 'desktop',
-        chromeMediaSourceId: streamId,
-      },
-    };
-  }
-
   startInFlight = true;
+  let desktopStream = null;
 
   try {
-    if (canRequestAudioTrack === true) {
-      const audioConstraints = {
-        video: {
-          mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: streamId,
-            maxFrameRate: 60,
-          },
-        },
-        audio: {
-          mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: streamId,
-          },
-        },
-      };
+    // 1. Direct getDisplayMedia in Offscreen Document (Standard MV3 approach)
+    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
       try {
-        stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
-      } catch (audioErr) {
-        console.warn('[SnapCap offscreen] Audio capture failed, falling back to video-only:', audioErr);
-        const videoOnlyConstraints = {
-          video: {
-            mandatory: {
-              chromeMediaSource: 'desktop',
-              chromeMediaSourceId: streamId,
-              maxFrameRate: 60,
-            },
-          },
-        };
-        stream = await navigator.mediaDevices.getUserMedia(videoOnlyConstraints);
+        desktopStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true,
+        });
+      } catch (gdmErr) {
+        if (gdmErr.name === 'NotAllowedError' || gdmErr.name === 'AbortError') {
+          // User clicked Cancel in screen picker
+          startInFlight = false;
+          releaseStream();
+          sendToSw({ action: 'RECORDING_CANCELLED' });
+          return;
+        }
+        // Fallback to video-only if system audio was not supported
+        try {
+          desktopStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: false,
+          });
+        } catch (videoOnlyErr) {
+          if (videoOnlyErr.name === 'NotAllowedError' || videoOnlyErr.name === 'AbortError') {
+            startInFlight = false;
+            releaseStream();
+            sendToSw({ action: 'RECORDING_CANCELLED' });
+            return;
+          }
+          console.warn('[SnapCap offscreen] getDisplayMedia video-only failed:', videoOnlyErr);
+        }
       }
-    } else {
-      const videoOnlyConstraints = {
+    }
+
+    // 2. Stream ID Fallback (if streamId was provided)
+    if (!desktopStream && streamId) {
+      const desktopConstraints = {
         video: {
           mandatory: {
             chromeMediaSource: 'desktop',
             chromeMediaSourceId: streamId,
-            maxFrameRate: 60,
           },
         },
       };
-      stream = await navigator.mediaDevices.getUserMedia(videoOnlyConstraints);
+      desktopStream = await navigator.mediaDevices.getUserMedia(desktopConstraints);
     }
-    activeStreams.push(stream);
+
+    if (!desktopStream) {
+      throw new Error('No screen stream was acquired');
+    }
+
+    activeStreams.push(desktopStream);
   } catch (err) {
     const message = (err && err.message) || String(err);
     startInFlight = false;
@@ -263,17 +244,7 @@ async function startRecording(streamId, duration, includeMic, canRequestAudioTra
     return;
   }
 
-  if (includeMic) {
-    try {
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      activeStreams.push(micStream);
-      micStream.getAudioTracks().forEach(track => stream.addTrack(track));
-    } catch (err) {
-      console.warn('Mic access denied:', err);
-    }
-  }
-
-  const videoTrack = stream.getVideoTracks()[0];
+  const videoTrack = desktopStream.getVideoTracks()[0];
   if (!videoTrack) {
     startInFlight = false;
     pendingStop = false;
@@ -286,26 +257,92 @@ async function startRecording(streamId, duration, includeMic, canRequestAudioTra
     return;
   }
 
+  // Construct combined output stream
+  const combinedStream = new MediaStream();
+  combinedStream.addTrack(videoTrack);
+
+  const audioTracks = [];
+  const desktopAudio = desktopStream.getAudioTracks()[0];
+  if (desktopAudio) audioTracks.push(desktopAudio);
+
+  if (includeMic) {
+    try {
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      activeStreams.push(micStream);
+      const micAudio = micStream.getAudioTracks()[0];
+      if (micAudio) audioTracks.push(micAudio);
+    } catch (err) {
+      console.warn('[SnapCap offscreen] Mic access not available:', err && err.message);
+    }
+  }
+
+  // Mix audio tracks if more than 1
+  if (audioTracks.length === 1) {
+    combinedStream.addTrack(audioTracks[0]);
+  } else if (audioTracks.length > 1) {
+    try {
+      const AudioCtxClass =
+        (typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)) ||
+        (typeof AudioContext !== 'undefined' ? AudioContext : null);
+      if (AudioCtxClass) {
+        const audioCtx = new AudioCtxClass();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+        const dest = audioCtx.createMediaStreamDestination();
+        for (const track of audioTracks) {
+          const source = audioCtx.createMediaStreamSource(new MediaStream([track]));
+          source.connect(dest);
+        }
+        const mixedTrack = dest.stream.getAudioTracks()[0];
+        if (mixedTrack) {
+          combinedStream.addTrack(mixedTrack);
+        } else {
+          combinedStream.addTrack(audioTracks[0]);
+        }
+      } else {
+        combinedStream.addTrack(audioTracks[0]);
+      }
+    } catch (mixErr) {
+      console.warn('[SnapCap offscreen] Audio mixing failed, using primary audio:', mixErr);
+      combinedStream.addTrack(audioTracks[0]);
+    }
+  }
+
+  activeStreams.push(combinedStream);
+
   // Native "Stop sharing" bar / source disappearing => graceful stop (C-6).
   videoTrack.onended = () => {
     console.warn('[SnapCap offscreen] video track ended (native stop sharing)');
     stopRecording('track-ended');
   };
 
-  recordingMimeType = pickMimeType(stream.getAudioTracks().length > 0);
+  const hasAudio = combinedStream.getAudioTracks().length > 0;
+  recordingMimeType = pickMimeType(hasAudio);
 
   try {
-    mediaRecorder = new MediaRecorder(stream, { mimeType: recordingMimeType });
+    const options = recordingMimeType ? { mimeType: recordingMimeType } : {};
+    mediaRecorder = new MediaRecorder(combinedStream, options);
   } catch (err) {
-    startInFlight = false;
-    pendingStop = false;
-    releaseStream();
-    sendToSw({
-      action: ACTION_RECORDING_ERROR,
-      fatal: true,
-      error: 'MediaRecorder could not start: ' + ((err && err.message) || String(err)),
-    });
-    return;
+    console.warn(
+      '[SnapCap offscreen] MediaRecorder with mimeType failed, falling back to default:',
+      err
+    );
+    try {
+      mediaRecorder = new MediaRecorder(combinedStream);
+      recordingMimeType = mediaRecorder.mimeType || 'video/webm';
+    } catch (fatalErr) {
+      startInFlight = false;
+      pendingStop = false;
+      releaseStream();
+      sendToSw({
+        action: ACTION_RECORDING_ERROR,
+        fatal: true,
+        error:
+          'MediaRecorder could not start: ' + ((fatalErr && fatalErr.message) || String(fatalErr)),
+      });
+      return;
+    }
   }
 
   mediaRecorder.ondataavailable = e => {
@@ -467,16 +504,6 @@ function handleTeardown(source) {
 }
 
 window.addEventListener('pagehide', () => handleTeardown('pagehide'));
-
-document.addEventListener('visibilitychange', () => {
-  // An offscreen document is never rendered, so this normally only fires while
-  // the document is being torn down — but a spurious hidden event at document
-  // creation would otherwise burn the latch (disarming the pagehide safety
-  // net) or truncate a recording. Only act when a recording is actually live.
-  if (document.visibilityState !== 'hidden') return;
-  if (!(recordingArmed || mediaRecorder)) return;
-  handleTeardown('visibilitychange');
-});
 
 // ---------------------------------------------------------------------------
 // Persistence

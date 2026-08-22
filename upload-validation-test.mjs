@@ -3,7 +3,7 @@
 // invoked directly without Firebase: invalid payloads must produce a 400
 // AppError, while valid payloads must get PAST validation (they then fail at
 // getDb() with "Firebase not initialized" — which is the proof they passed).
-import uploadRoutes from '/home/oaichu/open-capture-extension/backend/src/routes/upload.js';
+import uploadRoutes from './backend/src/routes/upload.js';
 
 function findHandler(path) {
   const layer = uploadRoutes.stack.find(l => l.route && l.route.path === path && l.route.methods.post);

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs';
 
 const apiBaseUrl = process.env.API_BASE_URL || '';
@@ -61,17 +61,18 @@ export default defineConfig({
           { src: 'content/content_script.js', dest: 'dist/content/content_script.js' },
           { src: 'popup/popup.css', dest: 'dist/popup/popup.css' },
           { src: 'editor/editor.css', dest: 'dist/editor/editor.css' },
-          { src: 'offscreen/offscreen.html', dest: 'dist/offscreen/offscreen.html' },
         ];
 
         for (const file of staticFiles) {
-          if (existsSync(file.src)) {
-            if (file.src.endsWith('/') || existsSync(file.src + '/')) {
+          const srcPath = resolve(__dirname, file.src);
+          const destPath = resolve(__dirname, file.dest);
+          if (existsSync(srcPath)) {
+            if (statSync(srcPath).isDirectory()) {
               copyDir(file.src, file.dest);
             } else {
-              const destDir = resolve(__dirname, file.dest).replace(/[^/]+$/, '');
+              const destDir = dirname(destPath);
               if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
-              copyFileSync(resolve(__dirname, file.src), resolve(__dirname, file.dest));
+              copyFileSync(srcPath, destPath);
             }
           }
         }

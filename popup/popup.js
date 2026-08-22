@@ -73,8 +73,21 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshRecordingState();
 
   // Save preferences
-  toggleMic.addEventListener('change', () => {
-    chrome.storage.local.set({ micEnabled: toggleMic.checked });
+  toggleMic.addEventListener('change', async () => {
+    if (toggleMic.checked) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+        chrome.storage.local.set({ micEnabled: true });
+      } catch (err) {
+        console.warn('[SnapCap] Microphone permission not granted:', err);
+        toggleMic.checked = false;
+        chrome.storage.local.set({ micEnabled: false });
+        showToast('Microphone access not granted.');
+      }
+    } else {
+      chrome.storage.local.set({ micEnabled: false });
+    }
   });
 
   // Recording duration — iOS-style segmented control
@@ -167,13 +180,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (actionType === 'CAPTURE_SELECTED') {
-      // The content script puts a selection overlay on the page. The popup will
-      // close the moment the user clicks/drags on the page; the result is shown
-      // in-page afterwards.
       showMainStatus('Drag to select an area on the page.');
-      // Fire-and-forget: the service worker answers nothing, so the promise
-      // must be caught or it surfaces as an unhandled rejection.
       chrome.runtime.sendMessage({ action: 'CAPTURE_SELECTED' }).catch(() => {});
+      setTimeout(() => {
+        try {
+          window.close();
+        } catch (err) {
+          /* ignore window close failure */
+        }
+      }, 150);
       return;
     }
 
@@ -202,54 +217,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isNaN(duration) || duration < 10) duration = 30;
     if (duration > 30) duration = 30;
 
-    // The popup (a chrome-extension:// RenderFrameHost) OWNS the native picker.
-    // chooseDesktopMedia() called from the service worker hard-errors without a
-    // targetTab, and WITH a targetTab the stream is origin-locked to that tab so
-    // the offscreen document could never consume it. Called here WITHOUT a
-    // targetTab the stream is bound to the extension origin, so the offscreen
-    // document's getUserMedia({ chromeMediaSourceId: streamId }) succeeds (N-11).
     renderRecordingState({ state: STATE_STARTING, duration });
-    btnStartRecord.innerHTML = 'Selecting source...';
+    btnStartRecord.innerHTML = 'Starting...';
 
-    // The tab on screen while recording is the tab behind the popup; the service
-    // worker needs its id to show the in-page recording badge at the right tab.
-    // Resolve it in PARALLEL with the picker: the query is near-instant, while
-    // choosing a source takes seconds, so by the time the picker callback fires
-    // the value is virtually always available. START_RECORDING is sent directly
-    // in the picker callback (no promise chain) so a popup close can never drop
-    // the message; if the id is still missing, the service worker falls back to
-    // the active tab (best effort).
-    let activeTabId = null;
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      activeTabId = tabs && tabs[0] ? tabs[0].id : null;
-    });
+      const activeTabId = tabs && tabs[0] ? tabs[0].id : null;
 
-    chrome.desktopCapture.chooseDesktopMedia(
-      ['screen', 'window', 'tab', 'audio'],
-      (streamId, pickerOptions) => {
-        if (!streamId) {
-          // The user dismissed the picker without choosing a source.
-          renderRecordingState({ state: STATE_IDLE });
-          showToast('Recording cancelled');
-          return;
+      chrome.runtime
+        .sendMessage({
+          action: 'START_RECORDING',
+          target: ROLE_SW,
+          duration,
+          mic: toggleMic.checked,
+          tabId: activeTabId,
+        })
+        .catch(() => {});
+
+      // Close popup so screen is completely unobstructed
+      setTimeout(() => {
+        try {
+          window.close();
+        } catch (err) {
+          /* ignore */
         }
-
-        const canRequestAudioTrack = !!(pickerOptions && pickerOptions.canRequestAudioTrack);
-        // Fire-and-forget: START_RECORDING is answered by push messages, not by a
-        // response, so the promise must be caught (unhandled rejection otherwise).
-        chrome.runtime
-          .sendMessage({
-            action: 'START_RECORDING',
-            target: ROLE_SW,
-            streamId,
-            canRequestAudioTrack,
-            duration,
-            mic: toggleMic.checked,
-            tabId: activeTabId,
-          })
-          .catch(() => {});
-      }
-    );
+      }, 150);
+    });
   });
 
   // Stop is the PRIMARY control (the in-page badge is best effort only).

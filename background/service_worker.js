@@ -496,9 +496,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case 'START_RECORDING':
-      startRecording(msg.duration, msg.mic, msg.streamId, msg.canRequestAudioTrack, msg.tabId).catch(
-        err => console.error('[SnapCap] startRecording failed:', err)
-      );
+      startRecording(
+        msg.duration,
+        msg.mic,
+        msg.streamId,
+        msg.canRequestAudioTrack,
+        msg.tabId
+      ).catch(err => console.error('[SnapCap] startRecording failed:', err));
       return;
 
     case ACTION_STOP_RECORDING_TRIGGER:
@@ -655,51 +659,88 @@ function captureVisible(sendResponse) {
   });
 }
 
+// Convert Data URL to Blob synchronously without fetch() (fetch(data:) is blocked in MV3 SW)
+function dataUrlToBlob(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string') return null;
+  const parts = dataUrl.split(',');
+  if (parts.length < 2) return null;
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+  const binary = atob(parts[1]);
+  const len = binary.length;
+  const buffer = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    buffer[i] = binary.charCodeAt(i);
+  }
+  return new Blob([buffer], { type: mime });
+}
+
+// Robust Blob to Data URL conversion (avoids FileReader in SW)
+async function blobToDataURL(blob) {
+  if (!blob) return null;
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const len = bytes.byteLength;
+  const chunkSize = 32768;
+  for (let i = 0; i < len; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunkSize, len)));
+  }
+  return 'data:' + (blob.type || 'image/png') + ';base64,' + btoa(binary);
+}
+
 // Capture cropped area -> respond directly to the content script
 function captureCropped(crop, sendResponse) {
-  captureVisibleTabOnce().then(res => {
+  captureVisibleTabOnce().then(async res => {
     if (!res.dataUrl) {
       sendResponse({ error: res.error });
       return;
     }
 
-    fetch(res.dataUrl)
-      .then(r => r.blob())
-      .then(createImageBitmap)
-      .then(img => {
-        const canvas = new OffscreenCanvas(crop.width, crop.height);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-        img.close();
-        return canvas.convertToBlob({ type: 'image/png' });
-      })
-      .then(blob => {
-        return new Promise(resolve => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
-      })
-      .then(croppedUrl => {
-        saveToIndexedDB(croppedUrl, 'image', id => {
-          if (!id) {
-            sendResponse({ error: 'save_failed' });
-            return;
-          }
-          sendResponse({ dataUrl: croppedUrl, id });
-        });
-      })
-      .catch(err => {
-        console.error('Crop failed:', err);
-        sendResponse({ error: err.message });
+    try {
+      const blob = dataUrlToBlob(res.dataUrl);
+      if (!blob) throw new Error('Failed to parse screenshot data');
+      const img = await createImageBitmap(blob);
+
+      // Clamp source coordinates safely to physical image dimensions
+      const rawX = crop && crop.x ? Math.round(crop.x) : 0;
+      const rawY = crop && crop.y ? Math.round(crop.y) : 0;
+      const rawW = crop && crop.width ? Math.round(crop.width) : img.width;
+      const rawH = crop && crop.height ? Math.round(crop.height) : img.height;
+
+      const sx = Math.max(0, Math.min(rawX, img.width - 1));
+      const sy = Math.max(0, Math.min(rawY, img.height - 1));
+      const sw = Math.max(1, Math.min(rawW, img.width - sx));
+      const sh = Math.max(1, Math.min(rawH, img.height - sy));
+
+      const canvas = new OffscreenCanvas(sw, sh);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      img.close();
+
+      const outBlob = await canvas.convertToBlob({ type: 'image/png' });
+      const croppedUrl = await blobToDataURL(outBlob);
+      if (!croppedUrl) throw new Error('Crop conversion failed');
+
+      saveToIndexedDB(croppedUrl, 'image', id => {
+        if (!id) {
+          sendResponse({ error: 'save_failed' });
+          return;
+        }
+        sendResponse({ dataUrl: croppedUrl, id });
       });
+    } catch (err) {
+      console.error('[SnapCap] Crop failed:', err);
+      sendResponse({ error: (err && err.message) || 'Crop failed' });
+    }
   });
 }
 
 // Full page capture -> respond directly to the popup
 function captureFullPage(sendResponse) {
+  startKeepAlive();
   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-    if (!tabs[0]) {
+    if (!tabs[0] || !tabs[0].id) {
+      stopKeepAlive();
       sendResponse({ error: 'No active tab' });
       return;
     }
@@ -708,27 +749,37 @@ function captureFullPage(sendResponse) {
       tabs[0].id,
       { action: 'EXECUTE_FULL_PAGE_SCROLL', target: ROLE_CONTENT },
       res => {
-        if (chrome.runtime.lastError || !res) {
-          console.warn('Content script error:', chrome.runtime.lastError);
+        const lastErr = chrome.runtime.lastError;
+        if (lastErr || !res) {
+          stopKeepAlive();
+          console.warn('[SnapCap] Content script error:', lastErr);
           sendResponse({ error: 'Page not ready. Refresh the tab and try again.' });
           return;
         }
 
-        if (res.status === 'success' && res.tiles?.length > 0) {
-          stitchTiles(res.tiles).then(stitchedUrl => {
-            if (!stitchedUrl) {
-              sendResponse({ error: 'Stitching failed' });
-              return;
-            }
-            saveToIndexedDB(stitchedUrl, 'image', id => {
-              if (!id) {
-                sendResponse({ error: 'save_failed' });
+        if (res.status === 'success' && res.tiles && res.tiles.length > 0) {
+          stitchTiles(res.tiles)
+            .then(stitchedUrl => {
+              stopKeepAlive();
+              if (!stitchedUrl) {
+                sendResponse({ error: 'Stitching failed' });
                 return;
               }
-              sendResponse({ dataUrl: stitchedUrl, id });
+              saveToIndexedDB(stitchedUrl, 'image', id => {
+                if (!id) {
+                  sendResponse({ error: 'save_failed' });
+                  return;
+                }
+                sendResponse({ dataUrl: stitchedUrl, id });
+              });
+            })
+            .catch(err => {
+              stopKeepAlive();
+              console.error('[SnapCap] Stitch failed:', err);
+              sendResponse({ error: 'Stitching failed' });
             });
-          });
         } else {
+          stopKeepAlive();
           sendResponse({ error: res.error || 'Could not scroll the page' });
         }
       }
@@ -736,41 +787,86 @@ function captureFullPage(sendResponse) {
   });
 }
 
-// Stitch tiles together
+// Stitch tiles together with accurate coordinate mapping, dimension clamping, and fallback
 async function stitchTiles(tiles) {
-  if (tiles.length === 1) {
-    return tiles[0].dataUrl;
-  }
+  if (!tiles || !tiles.length) return null;
+  if (tiles.length === 1) return tiles[0].dataUrl;
 
   try {
-    const firstBitmap = await fetch(tiles[0].dataUrl)
-      .then(r => r.blob())
-      .then(createImageBitmap);
-    const dpr = tiles[0].devicePixelRatio || 1;
-    const totalHeight = Math.round(tiles[0].totalHeight * dpr);
-    const width = firstBitmap.width;
+    // 1. Decode first tile to inspect real physical bitmap resolution
+    const firstBlob = dataUrlToBlob(tiles[0].dataUrl);
+    if (!firstBlob) return tiles[0].dataUrl;
+    const firstBitmap = await createImageBitmap(firstBlob);
+
+    const tileWidth = firstBitmap.width;
+    const tileHeight = firstBitmap.height;
+    const reportedDpr = tiles[0].devicePixelRatio || 1;
+    const reportedViewportHeight = tiles[0].viewportHeight || tileHeight / reportedDpr;
+
+    // Effective scale ratio between bitmap height and CSS viewport height
+    const scaleRatio = tileHeight / (reportedViewportHeight || 1);
     firstBitmap.close();
 
-    const canvas = new OffscreenCanvas(width, totalHeight);
+    // 2. Compute exact required canvas height based on all tile coordinates
+    let maxDrawBottom = 0;
+    for (const tile of tiles) {
+      const tileTop = Math.round(tile.y * scaleRatio);
+      const tileBottom = tileTop + tileHeight;
+      if (tileBottom > maxDrawBottom) {
+        maxDrawBottom = tileBottom;
+      }
+    }
+
+    let canvasHeight = maxDrawBottom;
+    if (tiles[0].totalHeight) {
+      const reportedTotalPx = Math.round(tiles[0].totalHeight * scaleRatio);
+      if (reportedTotalPx > 0) {
+        canvasHeight = Math.min(maxDrawBottom, reportedTotalPx);
+      }
+    }
+
+    if (canvasHeight < tileHeight) canvasHeight = tileHeight;
+
+    // Safety guard: max 16,384px to prevent GPU/browser texture allocation crash
+    const MAX_CANVAS_HEIGHT = 16384;
+    let downscale = 1;
+    if (canvasHeight > MAX_CANVAS_HEIGHT) {
+      downscale = MAX_CANVAS_HEIGHT / canvasHeight;
+      canvasHeight = MAX_CANVAS_HEIGHT;
+    }
+
+    const canvasWidth = Math.round(tileWidth * downscale);
+    const canvas = new OffscreenCanvas(canvasWidth, canvasHeight);
     const ctx = canvas.getContext('2d');
 
+    // 3. Draw each tile with proper coordinate mapping
     for (const tile of tiles) {
-      const bitmap = await fetch(tile.dataUrl)
-        .then(r => r.blob())
-        .then(createImageBitmap);
-      const drawY = Math.round(tile.y * dpr);
-      ctx.drawImage(bitmap, 0, drawY);
+      const tileBlob = dataUrlToBlob(tile.dataUrl);
+      if (!tileBlob) continue;
+      const bitmap = await createImageBitmap(tileBlob);
+
+      const drawY = Math.round(tile.y * scaleRatio * downscale);
+      const drawW = Math.round(bitmap.width * downscale);
+      const drawH = Math.round(bitmap.height * downscale);
+
+      ctx.drawImage(bitmap, 0, drawY, drawW, drawH);
       bitmap.close();
     }
 
+    // 4. Convert to Blob & Base64 Data URL safely without FileReader
     const blob = await canvas.convertToBlob({ type: 'image/png' });
-    return await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(blob);
-    });
+    if (!blob || blob.size === 0) {
+      throw new Error('Canvas convertToBlob returned empty blob');
+    }
+
+    return await blobToDataURL(blob);
   } catch (err) {
-    console.error('Stitch failed:', err);
+    console.error('[SnapCap] Stitch failed:', err);
+    // Graceful fallback: return the first tile instead of failing completely
+    if (tiles[0] && tiles[0].dataUrl) {
+      console.warn('[SnapCap] Returning first tile as fallback');
+      return tiles[0].dataUrl;
+    }
     return null;
   }
 }
@@ -795,16 +891,9 @@ function normalizeDuration(duration) {
 async function startRecording(duration, mic, streamId, canRequestAudioTrack, tabId) {
   const safeDuration = normalizeDuration(duration);
 
-  // Defensive guard: START_RECORDING must always carry the popup's stream id.
-  if (!streamId) {
-    await failStart('No screen source was selected. Please try again.');
-    return;
-  }
-
-  // The popup owns the picker (N-11) and reports the tab that is on screen, so
+  // The popup reports the tab that is on screen, so
   // the in-page badge can be shown at the right tab. Fall back to the active
-  // tab if the message did not carry one — the user may have switched tabs
-  // between picking a source and this message landing, so it is best effort.
+  // tab if the message did not carry one.
   const sessionTabId = tabId || (await getActiveTabId());
 
   await reconcileSession('start-recording');

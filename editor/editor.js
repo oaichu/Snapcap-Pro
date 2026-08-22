@@ -455,9 +455,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Load history
+  const btnClearHistory = document.getElementById('btnClearHistory');
+  const historyStats = document.getElementById('historyStats');
+
+  // Convert Data URL to Blob for copying
+  function dataURLtoBlob(dataUrl) {
+    const parts = dataUrl.split(';base64,');
+    const contentType = (parts[0] && parts[0].split(':')[1]) || 'image/png';
+    const raw = window.atob(parts[1] || '');
+    const uInt8Array = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; ++i) {
+      uInt8Array[i] = raw.charCodeAt(i);
+    }
+    return new Blob([uInt8Array], { type: contentType });
+  }
+
+  // Clear All History
+  if (btnClearHistory) {
+    btnClearHistory.addEventListener('click', async () => {
+      if (
+        !confirm(
+          'Are you sure you want to delete all saved captures? This will free local storage.'
+        )
+      ) {
+        return;
+      }
+      try {
+        const db = await openDB();
+        const tx = db.transaction('captures', 'readwrite');
+        const store = tx.objectStore('captures');
+        store.clear();
+        tx.oncomplete = () => {
+          showNotification('All local history cleared!');
+          loadHistory();
+        };
+      } catch (err) {
+        console.error('Failed to clear history:', err);
+        showNotification('Failed to clear history');
+      }
+    });
+  }
+
+  // Load history with delete, copy, download, and edit capabilities
   async function loadHistory() {
-    historyGrid.innerHTML = '<p style="color:var(--text-secondary)">Loading...</p>';
+    historyGrid.innerHTML = '<p style="color:var(--text-secondary)">Loading captures...</p>';
 
     try {
       const db = await openDB();
@@ -469,8 +510,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const items = req.result || [];
         historyGrid.innerHTML = '';
 
+        if (historyStats) {
+          let totalBytes = 0;
+          items.forEach(it => {
+            if (it.blob) totalBytes += it.blob.size;
+            else if (it.dataUrl) totalBytes += it.dataUrl.length * 0.75;
+          });
+          const mb = (totalBytes / (1024 * 1024)).toFixed(1);
+          historyStats.textContent = `${items.length} capture${items.length === 1 ? '' : 's'} stored locally (~${mb} MB)`;
+        }
+
         if (items.length === 0) {
-          historyGrid.innerHTML = '<p style="color:var(--text-secondary)">No captures yet</p>';
+          historyGrid.innerHTML =
+            '<div style="grid-column: 1/-1; text-align:center; padding: 48px; color:var(--text-secondary);">No captures saved yet. Use the extension popup to take screenshots or record videos!</div>';
           return;
         }
 
@@ -479,25 +531,148 @@ document.addEventListener('DOMContentLoaded', () => {
           .forEach(item => {
             const card = document.createElement('div');
             card.className = 'history-card';
+            card.id = `history-card-${item.id}`;
+
+            const mediaBox = document.createElement('div');
+            mediaBox.className = 'history-card-media';
 
             if (item.type === 'video' && item.blob) {
               const video = document.createElement('video');
               video.src = URL.createObjectURL(item.blob);
               video.muted = true;
-              card.appendChild(video);
+              mediaBox.appendChild(video);
             } else if (item.dataUrl) {
               const img = document.createElement('img');
               img.src = item.dataUrl;
-              card.appendChild(img);
+              mediaBox.appendChild(img);
             }
+
+            // Card Action Buttons Overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'history-card-overlay';
+
+            // 1. Open/Edit Button
+            const btnOpen = document.createElement('button');
+            btnOpen.className = 'card-action-btn';
+            btnOpen.title = item.type === 'video' ? 'Play Video' : 'Edit in Studio';
+            btnOpen.innerHTML =
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+            btnOpen.addEventListener('click', e => {
+              e.stopPropagation();
+              if (item.type === 'video') {
+                switchTab('video', item.id);
+              } else {
+                switchTab('image', item.id);
+              }
+            });
+
+            // 2. Copy Button
+            const btnCopyItem = document.createElement('button');
+            btnCopyItem.className = 'card-action-btn';
+            btnCopyItem.title = 'Copy to Clipboard';
+            btnCopyItem.innerHTML =
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+            btnCopyItem.addEventListener('click', async e => {
+              e.stopPropagation();
+              if (item.type === 'video' && item.blob) {
+                try {
+                  const a = document.createElement('a');
+                  a.download = `snapcap-${item.id}.webm`;
+                  a.href = URL.createObjectURL(item.blob);
+                  a.click();
+                  showNotification('Downloaded video!');
+                } catch (err) {
+                  showNotification('Copy not available for video files');
+                }
+              } else if (item.dataUrl) {
+                try {
+                  const blob = dataURLtoBlob(item.dataUrl);
+                  await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+                  showNotification('Copied image to clipboard!');
+                } catch (err) {
+                  console.error('Copy failed:', err);
+                  showNotification('Failed to copy image');
+                }
+              }
+            });
+
+            // 3. Download Button
+            const btnDownloadItem = document.createElement('button');
+            btnDownloadItem.className = 'card-action-btn';
+            btnDownloadItem.title = 'Download';
+            btnDownloadItem.innerHTML =
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+            btnDownloadItem.addEventListener('click', e => {
+              e.stopPropagation();
+              const a = document.createElement('a');
+              if (item.type === 'video' && item.blob) {
+                a.download = `snapcap-${item.id}.webm`;
+                a.href = URL.createObjectURL(item.blob);
+              } else if (item.dataUrl) {
+                a.download = `snapcap-${item.id}.png`;
+                a.href = item.dataUrl;
+              }
+              a.click();
+              showNotification('Download started!');
+            });
+
+            // 4. Delete Button
+            const btnDeleteItem = document.createElement('button');
+            btnDeleteItem.className = 'card-action-btn btn-delete';
+            btnDeleteItem.title = 'Delete Capture';
+            btnDeleteItem.innerHTML =
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+            btnDeleteItem.addEventListener('click', async e => {
+              e.stopPropagation();
+              try {
+                const dbDel = await openDB();
+                const txDel = dbDel.transaction('captures', 'readwrite');
+                const storeDel = txDel.objectStore('captures');
+                storeDel.delete(item.id);
+                txDel.oncomplete = () => {
+                  card.style.opacity = '0';
+                  card.style.transform = 'scale(0.8)';
+                  setTimeout(() => {
+                    card.remove();
+                    loadHistory();
+                  }, 200);
+                  showNotification('Capture deleted');
+                };
+              } catch (err) {
+                console.error('Delete failed:', err);
+                showNotification('Failed to delete capture');
+              }
+            });
+
+            overlay.appendChild(btnOpen);
+            overlay.appendChild(btnCopyItem);
+            overlay.appendChild(btnDownloadItem);
+            overlay.appendChild(btnDeleteItem);
+            mediaBox.appendChild(overlay);
+            card.appendChild(mediaBox);
 
             const info = document.createElement('div');
             info.className = 'history-card-info';
+            const dateStr = new Date(item.timestamp).toLocaleString([], {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
             info.innerHTML = `
-            <span class="history-card-type">${item.type.toUpperCase()}</span>
-            <span>${new Date(item.timestamp).toLocaleDateString()}</span>
-          `;
+              <span class="history-card-type ${item.type === 'video' ? 'video' : ''}">${item.type.toUpperCase()}</span>
+              <span>${dateStr}</span>
+            `;
             card.appendChild(info);
+
+            card.addEventListener('click', () => {
+              if (item.type === 'video') {
+                switchTab('video', item.id);
+              } else {
+                switchTab('image', item.id);
+              }
+            });
+
             historyGrid.appendChild(card);
           });
       };

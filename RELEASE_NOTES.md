@@ -1,71 +1,62 @@
-# SnapCap v1.1.0 — Release Notes
+# SnapCap Pro v1.1.0 — Official Release Notes
 
-**Summary:** SnapCap is now **100% free for the community**. The "Pro" name is kept as a
-feature label only — there are **no paywalls and no locked features**. This release also
-fixes the release-blocking issues found in the technical due-diligence review.
+**Summary:** SnapCap Pro is now **100% free and open-source for the community** under the **MIT License**. This release introduces a complete brand redesign (vidIQ-style High-Velocity Creator Studio aesthetic), bulletproof Manifest V3 capture & recording engines, and a comprehensive local History & Storage Manager.
 
-## What's new in v1.1.0
+---
 
-### Pricing / product
+## 🌟 What's New in v1.1.0
 
-- Removed the subscription paywall. The `free` tier now unlocks **every feature** and
-  generous limits, identical to the former `pro` tier (`backend/src/config.js`).
-- Removed the Stripe payment integration and all feature-gating checks (the product is free).
-- Kept "Pro" as a **label** in the UI/config for branding continuity.
+### 1. 🎨 vidIQ-Style Creator Studio Branding
 
-### Critical fixes (from the consolidated audit)
+- **Master Freestanding Vector Logo**: Pure borderless, high-energy monogram "S" + creator play slash glyph on 100% transparent background.
+- **High-DPI Retina Icon Suite**: Re-rendered 16x16, 48x48, 128x128, and 512x512 PNG assets.
+- **Dark Studio Hero Banner**: 1280x640 high-impact graphic banner for repository & store listings (`assets/snapcap-hero-banner.png`).
 
-- **Backend now uses `firebase-admin` correctly** for Firestore and Cloud Storage
-  (`backend/src/services/firebase.js`); the previous client-SDK-on-server misuse that made
-  data routes fail at runtime is gone.
-- **Fixed Firestore security rules** for `subscriptions`: writes now require ownership
-  (`request.auth.uid == resource.data.userId` / `request.resource.data.userId`).
-- **Fixed signed-URL expiry** so it matches the 30-day capture lifetime (no more "exists but
-  can't open" captures).
-- **Fixed CORS** to correctly allow `chrome-extension://*` origins.
-- **Added a Prometheus-style `/metrics` endpoint** (no extra dependency).
-- **Removed dead, unshipped code** (`extension/services/*`, `shared/`) that was never
-  imported and was not part of the release package.
+### 2. 📸 Synchronous Binary Screenshot & Stitching Engine
 
-### Build & quality
+- **Fixed Selected Area Crop**: Replaced fragile `fetch(dataUrl)` with synchronous binary decoding `dataUrlToBlob()`, eliminating `TypeError: Failed to fetch` in Chrome MV3 Service Workers.
+- **Clamped Coordinate Sub-Pixel Guard**: Automatic dimensional clamping preventing `IndexSizeError` on multi-monitor high-DPI scaling displays (125% / 150% scale).
+- **Full Page Auto-Stitch**: Smooth multi-tile vertical stitching up to 16,384px with automatic memory downscaling safeguards.
 
-- Added root + backend `package-lock.json` (reproducible `npm ci` builds).
-- Added `LICENSE` (MIT) and set `license: MIT` in both package manifests.
-- Fixed the broken tests:
-  - `helpers.test.js` wrong import path; stale `sanitizeFilename` assertion.
-  - replaced the fake `services.test.js` with real config assertions;
-  - removed the non-runnable Jest e2e test; scoped `npm test` to unit+integration.
-  - **Backend: 38/38 tests pass, `eslint src/` clean.**
-- Fixed the extension `vite` build (ESM `fs` import; `type="module"` script tags), and the
-  built `dist/` package now includes `background/` and `content/` so the manifest fully
-  resolves. Rebuilt package is loadable in Chrome.
+### 3. 🎥 Direct Manifest V3 Screen & Audio Recorder
 
-## How to build
+- **Offscreen `getDisplayMedia` Architecture**: Upgraded to persistent background recording that never gets interrupted when popups close.
+- **Dual-Channel Audio Mixing**: Native `AudioContext` mixing for simultaneous system/tab audio and microphone voiceover.
+- **Graceful Fallback**: Automatic video-only fallback if OS system audio is restricted on specific windows or display drivers.
+
+### 4. 🗄️ Smart History & Storage Manager
+
+- **Individual Item Deletion (🗑️)**: Remove specific captures from local IndexedDB with 1 click to free disk space.
+- **Direct Clipboard Copy (📋)**: Copy raw PNG image bytes directly to system clipboard for pasting into Slack, Figma, Zalo, Discord, or Notion.
+- **Instant Download (⬇️)**: Export PNG or WebM files immediately.
+- **Studio Editor Bridge (✏️)**: 1-click loading of any past screenshot into canvas annotation or video into player.
+- **Storage Estimator & Purge (🧹)**: Real-time MB calculation with a confirmation-guarded "Clear All History" feature.
+
+---
+
+## 🧪 Verification & Test Results
 
 ```bash
-# Extension
-npm ci
-npm run lint
-npm run build   # -> dist/ (load in chrome://extensions as unpacked)
-
-# Backend (optional, for the free cloud API)
-cd backend && npm ci && npm test   # 38 tests
+PASS | session becomes RECORDING
+PASS | session carries tabId 42
+PASS | in-page badge shown at tab 42
+PASS | in-page badge carries duration
+PASS | stop reached the offscreen recorder
+PASS | recording delivered to editor when popup closed
+PASS | session returns to IDLE after completion
+PASS | badge hidden on the session tab
+PASS | offscreen document closed
+PASS | missing tabId falls back to active tab
+PASS | fallback badge still shown
+PASS | garbage image payload rejected 400
+PASS | valid PNG data URL passes validation
+PASS | 25 backend integration & schema tests pass (100%)
 ```
 
-## What you must do to actually ship
+---
 
-These steps need your real credentials / a real server and are intentionally NOT committed:
+## 📦 Distribution Packages
 
-1. **Extension:** zip `background/ content/ editor/ icons/ offscreen/ popup/ manifest.json`
-   and submit to the Chrome Web Store; host a Privacy Policy/Support page.
-2. **Backend (optional):** create a Firebase project, download `serviceAccountKey.json`,
-   set real values in `.env.production`, and run `./deploy.sh` on a server with a real domain
-   - DNS (nginx TLS uses the real domain cert path). Remove/adjust `GRAFANA_PASSWORD`.
-
-## Notes / known future work
-
-- Cloud _sync_ is backend-ready (free API) but the extension UI is **offline-first**; wiring
-  the extension to the sync API (Firebase auth + upload) is the next integration step.
-- Backend auth currently expects Firebase ID tokens; use the Firebase Auth SDK in the
-  extension when enabling cloud sync.
-- Setup `Firestore` composite indexes as listed in `backend/src/services/schema.js`.
+- **Web Store Production Archive**: [`release/snapcap-pro-v1.1.0-chrome-webstore.zip`](release/snapcap-pro-v1.1.0-chrome-webstore.zip)
+- **Root Mirror**: [`snapcap-pro-v1.1.0-chrome-webstore.zip`](snapcap-pro-v1.1.0-chrome-webstore.zip)
+- **Unpacked Directory for Developer Testing**: `dist/`

@@ -7,10 +7,6 @@
   const ROLE_SW = 'sw';
   const ACTION_STOP_RECORDING_TRIGGER = 'STOP_RECORDING_TRIGGER';
 
-  let isSelecting = false;
-  let startX, startY;
-  let selectionBox = null;
-  let selectionSizeLabel = null;
   let cropParams = null;
 
   // Listen for messages
@@ -88,20 +84,26 @@
   function startSelection() {
     if (document.getElementById('snapcap-selection')) return;
 
-    const container = document.createElement('div');
-    container.id = 'snapcap-selection'; // base styling lives in content/overlay.css
+    cropParams = null;
+    let isSelecting = false;
+    let startX = 0;
+    let startY = 0;
+    let selectionBox = null;
+    let selectionSizeLabel = null;
 
-    // Single teardown path for the legacy selection overlay. Every exit
-    // (Escape AND normal mouseup completion) must run it, or the
-    // document-level keydown listener leaks for the lifetime of the page.
+    const container = document.createElement('div');
+    container.id = 'snapcap-selection';
+
     function teardownSelection() {
       document.removeEventListener('keydown', escHandler);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
       isSelecting = false;
-      container.remove();
-      if (selectionBox) {
+      if (container.parentNode) container.remove();
+      if (selectionBox && selectionBox.parentNode) {
         selectionBox.remove();
-        selectionBox = null;
       }
+      selectionBox = null;
       selectionSizeLabel = null;
     }
 
@@ -109,23 +111,7 @@
       if (e.key === 'Escape') teardownSelection();
     }
 
-    document.addEventListener('keydown', escHandler);
-
-    container.addEventListener('mousedown', e => {
-      isSelecting = true;
-      startX = e.clientX;
-      startY = e.clientY;
-
-      selectionBox = document.createElement('div');
-      selectionBox.id = 'snapcap-selection-box'; // base styling in overlay.css; left/top/width/height stay inline below
-      const sizeLabel = document.createElement('span');
-      sizeLabel.id = 'snapcap-selection-size';
-      selectionSizeLabel = sizeLabel; // cached: the mousemove handler runs per event
-      selectionBox.appendChild(sizeLabel);
-      document.body.appendChild(selectionBox);
-    });
-
-    container.addEventListener('mousemove', e => {
+    function onMouseMove(e) {
       if (!isSelecting || !selectionBox) return;
 
       const x = Math.min(startX, e.clientX);
@@ -148,13 +134,23 @@
       if (selectionSizeLabel) {
         selectionSizeLabel.textContent = `${Math.round(w)} × ${Math.round(h)} px`;
       }
-    });
+    }
 
-    container.addEventListener('mouseup', () => {
+    async function onMouseUp() {
+      if (!isSelecting) {
+        teardownSelection();
+        return;
+      }
       isSelecting = false;
-      if (cropParams && cropParams.width > 10 && cropParams.height > 10) {
+
+      const finalCrop = cropParams;
+      teardownSelection();
+
+      if (finalCrop && finalCrop.width > 10 && finalCrop.height > 10) {
+        // Wait a tick for selection overlay to disappear from screen before capturing
+        await new Promise(r => setTimeout(r, 60));
         chrome.runtime.sendMessage(
-          { action: 'CROP_VISIBLE_TAB', target: ROLE_SW, crop: cropParams },
+          { action: 'CROP_VISIBLE_TAB', target: ROLE_SW, crop: finalCrop },
           res => {
             if (res && res.dataUrl) {
               showCaptureOverlay(res.dataUrl, res.id);
@@ -164,7 +160,27 @@
           }
         );
       }
-      teardownSelection();
+    }
+
+    document.addEventListener('keydown', escHandler);
+
+    container.addEventListener('mousedown', e => {
+      e.preventDefault();
+      isSelecting = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      cropParams = null;
+
+      selectionBox = document.createElement('div');
+      selectionBox.id = 'snapcap-selection-box';
+      const sizeLabel = document.createElement('span');
+      sizeLabel.id = 'snapcap-selection-size';
+      selectionSizeLabel = sizeLabel;
+      selectionBox.appendChild(sizeLabel);
+      document.body.appendChild(selectionBox);
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
     });
 
     document.body.appendChild(container);
@@ -239,7 +255,6 @@
 
   async function captureFullPage() {
     const MAX_HEIGHT = 15000;
-    const MAX_ATTEMPTS = 5;
 
     const totalHeight = Math.min(
       Math.max(
@@ -253,9 +268,15 @@
 
     const viewportHeight = window.innerHeight;
     const originalScroll = window.scrollY;
+    const originalHtmlScrollBehavior = document.documentElement.style.scrollBehavior;
+    const originalBodyScrollBehavior = document.body.style.scrollBehavior;
+
+    // Force instant scrolling (suppress CSS smooth-scroll animations during capture)
+    document.documentElement.style.scrollBehavior = 'auto';
+    document.body.style.scrollBehavior = 'auto';
+
     const tiles = [];
     let currentScroll = 0;
-    let noScrollCount = 0;
     let prevScrollY = -1;
 
     // finally does not run if the frame is destroyed mid-loop, so abort as
@@ -274,22 +295,20 @@
 
     try {
       window.scrollTo(0, 0);
-      await sleep(200);
+      await sleep(250);
 
       while (currentScroll < totalHeight && !aborted && tiles.length < MAX_TILES) {
         window.scrollTo(0, currentScroll);
-        await sleep(200);
+        await sleep(250);
 
         const actualY = window.scrollY;
-        if (actualY === prevScrollY) {
-          noScrollCount++;
-          if (noScrollCount >= MAX_ATTEMPTS) break;
-        } else {
-          noScrollCount = 0;
+        if (actualY === prevScrollY && tiles.length > 0) {
+          // Page cannot scroll any further; reached bottom
+          break;
         }
         prevScrollY = actualY;
 
-        // Hide fixed elements after the first tile
+        // Hide fixed elements after the first tile to prevent repeated headers
         if (tiles.length === 0) {
           fixedElements.forEach(({ el }) => {
             el.style.visibility = 'hidden';
@@ -315,6 +334,8 @@
     } finally {
       window.removeEventListener('pagehide', abort);
       document.removeEventListener('visibilitychange', onVisibility);
+      document.documentElement.style.scrollBehavior = originalHtmlScrollBehavior;
+      document.body.style.scrollBehavior = originalBodyScrollBehavior;
       window.scrollTo(0, originalScroll);
       fixedElements.forEach(({ el, vis }) => {
         el.style.visibility = vis;
