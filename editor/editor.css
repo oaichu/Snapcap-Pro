@@ -220,6 +220,35 @@ body {
   transform: scale(0.94);
 }
 
+.btn-sponsor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: rgba(255, 94, 91, 0.1);
+  border: 1px solid rgba(255, 94, 91, 0.25);
+  color: #ff5e5b;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+
+.btn-sponsor:hover {
+  background: rgba(255, 94, 91, 0.2);
+  border-color: rgba(255, 94, 91, 0.5);
+  color: #ff6e6b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 94, 91, 0.2);
+}
+
+.btn-sponsor:active {
+  transform: scale(0.96);
+}
+
 .btn-primary {
   display: flex;
   align-items: center;

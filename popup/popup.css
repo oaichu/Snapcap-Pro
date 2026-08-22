@@ -520,6 +520,32 @@ body {
   border-color: var(--accent);
 }
 
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sponsor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ff5e5b;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgba(255, 94, 91, 0.1);
+  transition: all 0.18s var(--ease);
+}
+
+.sponsor-link:hover {
+  background: rgba(255, 94, 91, 0.2);
+  color: #ff6e6b;
+  transform: translateY(-1px);
+}
+
 .text-btn {
   background: none;
   border: none;

@@ -8,6 +8,7 @@
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3%20Certified-00F5FF?style=for-the-badge&logo=googlechrome&logoColor=black)](manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT%20Commercial%20Safe-00FFB2?style=for-the-badge&logo=opensourceinitiative&logoColor=black)](LICENSE)
+[![Support on Ko-fi](https://img.shields.io/badge/Support-Buy%20Me%20A%20Coffee-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/oaichu)
 [![Zero Dependencies](<https://img.shields.io/badge/Dependencies-0%20(Pure%20JS)-7000FF?style=for-the-badge&logo=javascript&logoColor=white>)](package.json)
 [![100% Local](https://img.shields.io/badge/Storage-100%25%20Local%20IndexedDB-FF007A?style=for-the-badge&logo=safari&logoColor=white)](#-privacy--local-first-guarantee)
 [![Chrome 116+](https://img.shields.io/badge/Chrome-116%2B%20%7C%20Edge%20%7C%20Brave-FF6B00?style=for-the-badge&logo=googlechrome&logoColor=white)](#-quick-start--installation)
@@ -202,6 +203,26 @@ flowchart TB
 | **Privacy Redaction Blur** |   ✅ **Included**   |       ❌ N/A       |    🔒 Paid only    |     ❌ N/A     |
 | **Local Offline Storage**  |  ✅ **100% Local**  |   ❌ Cloud only    |     ⚠️ Hybrid      | ❌ Public URLs |
 | **Extension Size**         |   ⚡ **~188 KB**    |     ❌ ~45 MB      |     ❌ ~28 MB      |   ❌ ~12 MB    |
+
+---
+
+## 💖 Support & Buy Me a Coffee
+
+SnapCap Pro is **100% free and open-source forever**, with zero paywalls, zero locked features, and zero tracking.
+
+If SnapCap Pro speeds up your daily workflow, helps your content creation, or provides value to your team, please consider supporting ongoing maintenance and new features by buying me a coffee:
+
+<div align="center">
+
+  <a href="https://ko-fi.com/oaichu" target="_blank" rel="noopener noreferrer">
+    <img src="https://storage.ko-fi.com/cdn/kofi3.png?v=3" alt="Buy Me A Coffee at ko-fi.com" height="46" style="border: 0px; height: 46px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 94, 91, 0.35);" />
+  </a>
+
+<br/><br/>
+
+<i>Every cup of coffee fuels continuous development, new features, and community support. Thank you for your generosity! ☕✨</i>
+
+</div>
 
 ---
 
