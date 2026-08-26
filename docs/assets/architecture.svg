@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img" aria-label="SnapCap Pro Architecture Map">
+  <defs>
+    <style>
+      .bg { fill: #0B0D14; stroke: #1D2233; stroke-width: 1.5; }
+      .text { font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace; font-size: 13.5px; }
+      .folder { fill: #00D2FF; font-weight: bold; }
+      .file { fill: #FFFFFF; }
+      .comment { fill: #71717A; font-style: italic; }
+      .tree { fill: #3F3F46; }
+      
+      @keyframes popIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      .item { animation: popIn 0.3s forwards; opacity: 0; }
+    </style>
+  </defs>
+  
+  <rect width="800" height="360" rx="14" class="bg"/>
+  
+  <!-- Window Header Controls -->
+  <circle cx="24" cy="20" r="5" fill="#FF5F56"/>
+  <circle cx="40" cy="20" r="5" fill="#FFBD2E"/>
+  <circle cx="56" cy="20" r="5" fill="#27C93F"/>
+  <text x="400" y="24" fill="#71717A" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle" font-weight="600">tree — SnapCap Pro Manifest V3 Architecture</text>
+  <line x1="0" y1="40" x2="800" y2="40" stroke="#1D2233" stroke-width="1"/>
+
+  <g class="text" transform="translate(30, 70)">
+    <g class="item" style="animation-delay: 0.05s"><text y="0"><tspan class="folder">open-capture-extension/</tspan></text></g>
+    <g class="item" style="animation-delay: 0.15s"><text y="24"><tspan class="tree">├── </tspan><tspan class="file">manifest.json</tspan><tspan x="220" class="comment"># Manifest V3 configuration &amp; strict zero-CDN CSP</tspan></text></g>
+    <g class="item" style="animation-delay: 0.25s"><text y="48"><tspan class="tree">├── </tspan><tspan class="folder">popup/</tspan><tspan x="220" class="comment"># Apple Pro glassmorphism trigger dashboard &amp; settings</tspan></text></g>
+    <g class="item" style="animation-delay: 0.35s"><text y="72"><tspan class="tree">├── </tspan><tspan class="folder">content/</tspan><tspan x="220" class="comment"># In-page drag crop box, full-page scroll &amp; REC badge</tspan></text></g>
+    <g class="item" style="animation-delay: 0.45s"><text y="96"><tspan class="tree">├── </tspan><tspan class="folder">background/</tspan><tspan x="220" class="comment"># Service worker, snapshot stitcher &amp; event broker</tspan></text></g>
+    <g class="item" style="animation-delay: 0.55s"><text y="120"><tspan class="tree">├── </tspan><tspan class="folder">offscreen/</tspan><tspan x="220" class="comment"># MediaRecorder API container for 30s screen/audio</tspan></text></g>
+    <g class="item" style="animation-delay: 0.65s"><text y="144"><tspan class="tree">├── </tspan><tspan class="folder">editor/</tspan><tspan x="220" class="comment"># 60fps HTML5 Canvas Studio, vector tools &amp; blur redaction</tspan></text></g>
+    <g class="item" style="animation-delay: 0.75s"><text y="168"><tspan class="tree">├── </tspan><tspan class="folder">icons/</tspan><tspan x="220" class="comment"># High-resolution retina extension icons (16/48/128)</tspan></text></g>
+    <g class="item" style="animation-delay: 0.85s"><text y="192"><tspan class="tree">├── </tspan><tspan class="folder">legal/</tspan><tspan x="220" class="comment"># Open-source privacy policy &amp; terms of service</tspan></text></g>
+    <g class="item" style="animation-delay: 0.95s"><text y="216"><tspan class="tree">└── </tspan><tspan class="folder">backend/</tspan><tspan x="220" class="comment"># Optional self-hosted Express &amp; Firebase Cloud API</tspan></text></g>
+    
+    <g class="item" style="animation-delay: 1.1s"><text y="255" class="folder">100% Offline-First · Zero NPM Runtime Dependencies</text></g>
+  </g>
+</svg>

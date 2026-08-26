@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" role="img" aria-label="SnapCap Pro Quickstart Terminal">
+  <defs>
+    <style>
+      .bg { fill: #0B0D14; stroke: #1D2233; stroke-width: 1.5; }
+      .text { font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace; font-size: 14px; }
+      .prompt { fill: #00D2FF; font-weight: bold; }
+      .cmd { fill: #FFFFFF; }
+      .highlight { fill: #AF52DE; font-weight: bold; }
+      .gray { fill: #71717A; }
+      .success { fill: #34C759; font-weight: bold; }
+      
+      @keyframes type1 { 0%, 10% { opacity: 0; } 15%, 100% { opacity: 1; } }
+      @keyframes type2 { 0%, 25% { opacity: 0; } 30%, 100% { opacity: 1; } }
+      @keyframes type3 { 0%, 45% { opacity: 0; } 50%, 100% { opacity: 1; } }
+      @keyframes type4 { 0%, 65% { opacity: 0; } 70%, 100% { opacity: 1; } }
+      @keyframes type5 { 0%, 80% { opacity: 0; } 85%, 100% { opacity: 1; } }
+      
+      .l1 { animation: type1 9s forwards infinite; }
+      .l2 { animation: type2 9s forwards infinite; }
+      .l3 { animation: type3 9s forwards infinite; }
+      .l4 { animation: type4 9s forwards infinite; }
+      .l5 { animation: type5 9s forwards infinite; }
+    </style>
+  </defs>
+  
+  <rect width="800" height="240" rx="14" class="bg"/>
+  
+  <!-- Terminal Window Controls -->
+  <circle cx="20" cy="20" r="5" fill="#FF5F56"/>
+  <circle cx="36" cy="20" r="5" fill="#FFBD2E"/>
+  <circle cx="52" cy="20" r="5" fill="#27C93F"/>
+  <text x="400" y="24" fill="#71717A" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle" font-weight="600">bash — load unpacked extension</text>
+  <line x1="0" y1="40" x2="800" y2="40" stroke="#1D2233" stroke-width="1"/>
+
+  <g class="text" transform="translate(30, 68)">
+    <g class="l1">
+      <text y="0"><tspan class="prompt">❯</tspan> <tspan class="cmd">git clone https://github.com/oaichu/Snapcap-Pro.git</tspan></text>
+    </g>
+    <g class="l2">
+      <text y="25" class="gray">✓ Repository cloned. Total size &lt; 800 KB (Zero NPM deps needed).</text>
+    </g>
+    <g class="l3">
+      <text y="58"><tspan class="prompt">❯</tspan> <tspan class="cmd">open chrome://extensions</tspan> <tspan class="gray"># Toggle [Developer mode: ON]</tspan></text>
+    </g>
+    <g class="l4">
+      <text y="90" class="success">✓ Clicked "Load unpacked" → Selected /open-capture-extension</text>
+    </g>
+    <g class="l5">
+      <text y="125" class="success">● SnapCap Pro Studio v1.1.0<tspan class="gray"> · Manifest V3 active on toolbar</tspan></text>
+    </g>
+  </g>
+</svg>

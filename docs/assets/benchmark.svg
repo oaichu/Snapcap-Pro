@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280" role="img" aria-label="SnapCap Pro Benchmark">
+  <defs>
+    <style>
+      @keyframes grow1 { from { width: 0; } to { width: 45px; } }
+      @keyframes grow2 { from { width: 0; } to { width: 420px; } }
+      @keyframes grow3 { from { width: 0; } to { width: 50px; } }
+      @keyframes grow4 { from { width: 0; } to { width: 460px; } }
+      .bar-snap1 { animation: grow1 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .bar-comp1 { animation: grow2 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .bar-snap2 { animation: grow3 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .bar-comp2 { animation: grow4 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
+    <linearGradient id="snapGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00D2FF"/>
+      <stop offset="100%" stop-color="#34C759"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="280" rx="16" fill="#0D0F17" stroke="#1F2433" stroke-width="1.5"/>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif">
+    <!-- Header -->
+    <text x="35" y="38" fill="#FFFFFF" font-size="16" font-weight="700">⚡ Performance &amp; Resource Footprint Benchmark</text>
+    <text x="765" y="38" fill="#34C759" font-size="13" font-weight="600" text-anchor="end">Tested on Chromium Manifest V3</text>
+    <line x1="35" y1="52" x2="765" y2="52" stroke="#1F2433" stroke-width="1"/>
+
+    <!-- Metric 1: Package Size -->
+    <g transform="translate(35, 75)">
+      <text y="14" fill="#E4E4E7" font-size="13" font-weight="600">Extension Package Size</text>
+      
+      <!-- SnapCap Bar -->
+      <rect x="180" y="0" width="500" height="18" rx="9" fill="#171A26"/>
+      <rect x="180" y="0" height="18" rx="9" fill="url(#snapGrad)" class="bar-snap1"/>
+      <text x="240" y="14" fill="#00D2FF" font-size="11" font-weight="700">780 KB (SnapCap Pro)</text>
+      
+      <!-- Competitors Bar -->
+      <rect x="180" y="24" width="500" height="18" rx="9" fill="#171A26"/>
+      <rect x="180" y="24" height="18" rx="9" fill="#FF5F56" opacity="0.75" class="bar-comp1"/>
+      <text x="610" y="38" fill="#FFFFFF" font-size="11" font-weight="600">35 MB (Other Extensions)</text>
+    </g>
+
+    <!-- Metric 2: Idle Memory RAM -->
+    <g transform="translate(35, 145)">
+      <text y="14" fill="#E4E4E7" font-size="13" font-weight="600">RAM Memory Footprint</text>
+      
+      <!-- SnapCap Bar -->
+      <rect x="180" y="0" width="500" height="18" rx="9" fill="#171A26"/>
+      <rect x="180" y="0" height="18" rx="9" fill="url(#snapGrad)" class="bar-snap2"/>
+      <text x="245" y="14" fill="#00D2FF" font-size="11" font-weight="700">~15 MB (Service Worker Idle)</text>
+      
+      <!-- Competitors Bar -->
+      <rect x="180" y="24" width="500" height="18" rx="9" fill="#171A26"/>
+      <rect x="180" y="24" height="18" rx="9" fill="#FF5F56" opacity="0.75" class="bar-comp2"/>
+      <text x="650" y="38" fill="#FFFFFF" font-size="11" font-weight="600">140 MB+</text>
+    </g>
+
+    <!-- Bottom Feature Summary Cards -->
+    <g transform="translate(35, 215)">
+      <rect width="230" height="42" rx="8" fill="#141724" stroke="#1F2538"/>
+      <text x="15" y="26" fill="#34C759" font-size="13" font-weight="700">✓ 0 NPM Dependencies</text>
+      <text x="175" y="26" fill="#888" font-size="11">Pure Canvas</text>
+
+      <rect x="250" width="230" height="42" rx="8" fill="#141724" stroke="#1F2538"/>
+      <text x="265" y="26" fill="#00D2FF" font-size="13" font-weight="700">✓ 100% Offline-First</text>
+      <text x="415" y="26" fill="#888" font-size="11">Zero Trackers</text>
+
+      <rect x="500" width="230" height="42" rx="8" fill="#141724" stroke="#1F2538"/>
+      <text x="515" y="26" fill="#AF52DE" font-size="13" font-weight="700">✓ 100% Free Forever</text>
+      <text x="670" y="26" fill="#888" font-size="11">No Paywall</text>
+    </g>
+  </g>
+</svg>

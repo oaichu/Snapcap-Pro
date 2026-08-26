@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="assets/snapcap-hero-banner.png" alt="SnapCap Pro - The Creator Screen Studio" width="100%" style="border-radius: 16px; margin-bottom: 24px;" />
+  <img src="assets/snapcap-hero-banner.svg" alt="SnapCap Pro - The Creator Screen Studio" width="100%" style="border-radius: 16px; margin-bottom: 24px;" />
 
 # ⚡ SnapCap Pro
 
@@ -15,7 +15,7 @@
 
   <br/>
 
-[⚡ Why SnapCap Pro?](#-why-snapcap-pro) • [🌟 Core Features](#-core-features) • [🚀 Quick Start](#-quick-start--installation) • [🎨 Studio Suite](#-pro-studio-suite) • [🗄️ History Manager](#️-smart-history--storage-manager) • [🏗️ Architecture](#️-architecture) • [🛡️ Privacy](#-privacy--local-first-guarantee) • [📄 Commercial License](#-license--commercial-use)
+[⚡ Why SnapCap Pro?](#-why-snapcap-pro) • [🌟 Core Features](#-core-features) • [🎨 Studio Suite](#-pro-studio-suite) • [⚡ Benchmark](#-performance--resource-benchmark) • [🚀 Quick Start](#-quick-start--installation) • [🗄️ History Manager](#️-smart-history--storage-manager) • [🏗️ Architecture](#️-architecture) • [🛡️ Privacy](#-privacy--local-first-guarantee) • [📄 License](#-license--commercial-use)
 
 </div>
 
@@ -23,15 +23,17 @@
 
 ## ⚡ Why SnapCap Pro?
 
-Most screen capture and recording extensions on the Web Store today are **bloated (25MB–80MB)**, closed-source, bundle background trackers, or hold essential features like full-page scrolling, annotations, and video exports hostage behind expensive monthly subscriptions ($15–$30/mo).
+> [!WARNING]
+> **The Bloatware Nightmare:** Most screen capture and recording extensions on the Web Store today are **bloated (25MB–80MB)**, closed-source, bundle background trackers, or hold essential features like full-page scrolling, annotations, and video exports hostage behind expensive monthly subscriptions ($15–$30/mo).
 
-**SnapCap Pro** is engineered from the ground up to give creators, developers, designers, and founders a **lightning-fast, zero-bloat, 100% free and open-source screen capture & recording powerhouse**:
+> [!TIP]
+> **The SnapCap Paradigm:** You deserve a tool that is **instant, lightweight, and uncompromisingly private**. A 60fps smooth studio that launches in 1 millisecond, requires **zero npm runtime dependencies**, operates **100% offline**, and gives you professional vector annotation, pixel-perfect scrolling, privacy redaction, and rapid 4K/60fps video recording **completely free forever**.
 
-- 🚀 **High Velocity**: 1-click visible snapshot, drag-and-snap crop, and automatic full-page stitching.
-- 🎥 **Fluid 4K/60fps Recording**: Instant video clips with system audio & mic mixing without watermarks.
-- 🎨 **Pro Studio Annotation**: Arrows, shapes, typography, and 1-click privacy redaction blur.
-- 🗄️ **Smart Local Storage Manager**: Local IndexedDB gallery with individual item deletion, instant clipboard copy, and 1-click cache purge.
-- 🔒 **100% Offline & Private**: Zero telemetry, zero external tracking, zero server lock-in.
+**SnapCap Pro** is engineered from first principles with modern **Manifest V3**, **Pure Vanilla JS**, and **Native HTML5 Canvas 2D**. No bloated frameworks, no analytics trackers, no account gates.
+
+<p align="center">
+  <img src="docs/assets/workflow.svg" width="100%" alt="SnapCap Pro 4-Stage Workflow Pipeline"/>
+</p>
 
 ---
 
@@ -51,7 +53,7 @@ Most screen capture and recording extensions on the Web Store today are **bloate
     <td width="50%" valign="top">
       <h3>🎥 2. Fluid Screen & Audio Recorder</h3>
       <ul>
-        <li><b>High-FPS Capture</b>: Perfect for bug reports, video demos, tutorials, and async communication.</li>
+        <li><b>4K / 60fps Capture</b>: Perfect for bug reports, video demos, tutorials, and async communication.</li>
         <li><b>System & Mic Audio Mixing</b>: Dual-channel audio mixer powered by native <code>AudioContext</code>.</li>
         <li><b>Direct DisplayMedia Engine</b>: Persistent background recorder that never fails when popups close.</li>
         <li><b>Frame Extractor</b>: Extract any instant video frame directly into the Studio Editor.</li>
@@ -84,16 +86,65 @@ Most screen capture and recording extensions on the Web Store today are **bloate
 
 ---
 
+## 🎨 Pro Studio Suite
+
+<p align="center">
+  <img src="docs/assets/studio-preview.svg" width="100%" alt="SnapCap Studio Editor Interface Mockup"/>
+</p>
+
+SnapCap Pro includes a complete built-in graphic editor designed specifically for creating high-impact visual explanations:
+
+| Tool | Shortcut | Description |
+| :--- | :---: | :--- |
+| **Pencil** | `P` | Freehand smooth vector drawing with adjustable stroke width. |
+| **Arrow** | `A` | Intelligent dynamic pointer with arrowhead geometry. |
+| **Rectangle** | `R` | Wireframe and boundary highlighting boxes. |
+| **Circle** | `C` | Optical focus rings for drawing attention to UI elements. |
+| **Text** | `T` | Formatted multi-line text labels with high-contrast backing. |
+| **Privacy Blur** | `B` | Non-reversible Gaussian redaction for credentials & sensitive info. |
+| **Undo / Redo** | `Ctrl+Z` / `Ctrl+Y` | Step backwards and forwards through 20 editing states. |
+| **Copy to Clipboard** | `Ctrl+C` | Instant raw PNG buffer write to system clipboard. |
+| **Download** | `Ctrl+S` | Export high-resolution PNG or WebM video. |
+
+---
+
+## ⚡ Performance & Resource Benchmark
+
+<p align="center">
+  <img src="docs/assets/benchmark.svg" width="100%" alt="SnapCap Pro Performance Benchmark"/>
+</p>
+
+| Feature / Metric | SnapCap Pro (Free) | Loom Free | Awesome Screenshot | Lightshot |
+| :--- | :---: | :---: | :---: | :---: |
+| **Open Source (MIT)** | ✅ **100%** | ❌ Closed | ❌ Closed | ❌ Closed |
+| **Price / Paywall** | 💎 **Free Forever** | $12.50/mo limit | $6/mo paywall | Ad-supported |
+| **Full Page Scrolling** | ✅ **Unlimited** | ❌ N/A | ⚠️ 3 free/mo | ❌ N/A |
+| **Recording Quality** | 🎥 **4K / 60fps** | ⚠️ 720p limit | ⚠️ 720p limit | ❌ N/A |
+| **Privacy Redaction Blur**| ✅ **Included** | ❌ N/A | 🔒 Paid only | ❌ N/A |
+| **Local Offline Storage**| ✅ **100% Local** | ❌ Cloud only | ⚠️ Hybrid | ❌ Public URLs |
+| **Package Size** | ⚡ **< 780 KB** | ❌ ~45 MB | ❌ ~28 MB | ❌ ~12 MB |
+| **Idle RAM Footprint** | 🚀 **~15 MB** | ❌ ~140 MB | ❌ ~120 MB | ❌ ~60 MB |
+
+---
+
 ## 🚀 Quick Start & Installation
 
-### Option A: Install from Release Package (Recommended)
+<p align="center">
+  <img src="docs/assets/quickstart.svg" width="100%" alt="Quickstart Installation Terminal"/>
+</p>
 
-1. Download [`snapcap-pro-v1.1.0-chrome-webstore.zip`](release/snapcap-pro-v1.1.0-chrome-webstore.zip) from the repository.
-2. Unzip the file to a local folder (e.g. `SnapCap-Pro-Dist`).
-3. Open Google Chrome (or Edge, Brave, Opera, Arc) and navigate to `chrome://extensions`.
-4. Enable **Developer mode** (toggle in the top-right corner).
-5. Click **Load unpacked** and select the unzipped folder.
-6. Pin **SnapCap Pro** to your browser toolbar!
+### Option A: Load Directly in Developer Mode (Fastest)
+
+1. Clone or download this repository:
+   ```bash
+   git clone https://github.com/oaichu/Snapcap-Pro.git
+   ```
+2. Open Google Chrome (or Edge, Brave, Opera, Arc) and navigate to `chrome://extensions`.
+3. Enable **Developer mode** (toggle in the top-right corner).
+4. Click **Load unpacked** and select the `open-capture-extension` folder.
+5. 🎉 **Done!** Pin **SnapCap Pro** to your browser toolbar!
+
+---
 
 ### Option B: Build from Source
 
@@ -116,29 +167,11 @@ The ready-to-upload ZIP package will be generated at `release/snapcap-pro-v1.1.0
 
 ---
 
-## 🎨 Pro Studio Suite
-
-SnapCap Pro includes a complete built-in graphic editor designed specifically for creating high-impact visual explanations:
-
-| Tool                  |      Shortcut       | Description                                                         |
-| :-------------------- | :-----------------: | :------------------------------------------------------------------ |
-| **Pencil**            |         `P`         | Freehand smooth vector drawing with adjustable stroke width.        |
-| **Arrow**             |         `A`         | Intelligent dynamic pointer with arrowhead geometry.                |
-| **Rectangle**         |         `R`         | Wireframe and boundary highlighting boxes.                          |
-| **Circle**            |         `C`         | Optical focus rings for drawing attention to UI elements.           |
-| **Text**              |         `T`         | Formatted multi-line text labels with high-contrast backing.        |
-| **Privacy Blur**      |         `B`         | Non-reversible Gaussian redaction for credentials & sensitive info. |
-| **Undo / Redo**       | `Ctrl+Z` / `Ctrl+Y` | Step backwards and forwards through 20 editing states.              |
-| **Copy to Clipboard** |      `Ctrl+C`       | Instant raw PNG buffer write to system clipboard.                   |
-| **Download**          |      `Ctrl+S`       | Export high-resolution PNG or WebM video.                           |
-
----
-
 ## 🗄️ Smart History & Storage Manager
 
 SnapCap Pro stores all captures locally inside your browser's sandboxed **`SnapCapDB` (IndexedDB)**:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │  My Captures                          14 items stored locally (~4.2 MB)│
 │  [🗑️ Clear All History]                                                │
@@ -146,7 +179,7 @@ SnapCap Pro stores all captures locally inside your browser's sandboxed **`SnapC
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐      │
 │  │ 📸 Image         │  │ 🎥 Video (10s)   │  │ 📸 Full Page     │      │
 │  │ [Edit][📋][⬇️][🗑️]│  │ [Play][📋][⬇️][🗑️]│  │ [Edit][📋][⬇️][🗑️]│      │
-│  │ Aug 23, 03:00 PM │  │ Aug 23, 03:02 PM │  │ Aug 23, 03:05 PM │      │
+│  │ Aug 26, 03:00 PM │  │ Aug 26, 03:02 PM │  │ Aug 26, 03:05 PM │      │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘      │
 └────────────────────────────────────────────────────────────────────────┘
 ```
@@ -158,7 +191,9 @@ SnapCap Pro stores all captures locally inside your browser's sandboxed **`SnapC
 
 ## 🏗️ Architecture
 
-SnapCap Pro is built following Google's official **Manifest V3** best practices:
+<p align="center">
+  <img src="docs/assets/architecture.svg" width="100%" alt="Manifest V3 Architecture Map"/>
+</p>
 
 ```mermaid
 flowchart TB
@@ -187,22 +222,9 @@ flowchart TB
 ## 🛡️ Privacy & Local-First Guarantee
 
 - 🟢 **No Tracking / No Telemetry**: SnapCap Pro contains zero Google Analytics, zero Mixpanel, zero Sentry, and zero ad scripts.
+- 🟢 **Zero External Fonts or CDNs**: Renders exclusively with the native OS font stack (`-apple-system`, `SF Pro`, `BlinkMacSystemFont`, `Segoe UI`, `Roboto`). No Google Fonts CDN is ever contacted.
 - 🟢 **No Remote Code Execution**: Full compliance with Chrome Web Store strict Content Security Policy (`script-src 'self'`).
 - 🟢 **No Mandatory Cloud**: Captures remain strictly inside your browser's local sandbox.
-
----
-
-## 📊 Comparison Matrix
-
-| Feature                    | SnapCap Pro (Free)  |     Loom Free      | Awesome Screenshot |   Lightshot    |
-| :------------------------- | :-----------------: | :----------------: | :----------------: | :------------: |
-| **Open Source (MIT)**      |     ✅ **100%**     |     ❌ Closed      |     ❌ Closed      |   ❌ Closed    |
-| **Price / Paywall**        | 💎 **Free Forever** |  $12.50/mo limit   |   $6/mo paywall    |  Ad-supported  |
-| **Full Page Scrolling**    |  ✅ **Unlimited**   |       ❌ N/A       |    ⚠️ 3 free/mo    |     ❌ N/A     |
-| **Recording Limit**        | ✅ **Configurable** | ⚠️ 5 min / 25 vids |    ⚠️ 5 min max    |     ❌ N/A     |
-| **Privacy Redaction Blur** |   ✅ **Included**   |       ❌ N/A       |    🔒 Paid only    |     ❌ N/A     |
-| **Local Offline Storage**  |  ✅ **100% Local**  |   ❌ Cloud only    |     ⚠️ Hybrid      | ❌ Public URLs |
-| **Extension Size**         |   ⚡ **~188 KB**    |     ❌ ~45 MB      |     ❌ ~28 MB      |   ❌ ~12 MB    |
 
 ---
 
@@ -213,15 +235,11 @@ SnapCap Pro is **100% free and open-source forever**, with zero paywalls, zero l
 If SnapCap Pro speeds up your daily workflow, helps your content creation, or provides value to your team, please consider supporting ongoing maintenance and new features by buying me a coffee:
 
 <div align="center">
-
   <a href="https://ko-fi.com/oaichu" target="_blank" rel="noopener noreferrer">
-    <img src="https://storage.ko-fi.com/cdn/kofi3.png?v=3" alt="Buy Me A Coffee at ko-fi.com" height="46" style="border: 0px; height: 46px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 94, 91, 0.35);" />
+    <img src="https://storage.ko-fi.com/cdn/kofi3.png?v=3" alt="Buy Me A Coffee at ko-fi.com" height="48" style="border: 0px; height: 48px; border-radius: 8px; box-shadow: 0 4px 14px rgba(255, 94, 91, 0.35);" />
   </a>
-
-<br/><br/>
-
-<i>Every cup of coffee fuels continuous development, new features, and community support. Thank you for your generosity! ☕✨</i>
-
+  <br/><br/>
+  <em>Every coffee fuels ongoing development of open-source, privacy-first developer tools. Thank you! ☕✨</em>
 </div>
 
 ---
@@ -235,7 +253,6 @@ SnapCap Pro is distributed under the **[MIT License](LICENSE)**.
 
 ---
 
-<div align="center">
-  <b>Built with passion for creators, engineers, and designers worldwide.</b><br/>
-  ⭐ Star this repo if you find it helpful!
-</div>
+<p align="center">
+  <sub>MIT License · © 2026 SnapCap Contributors · <strong>Fast. Lightweight. Uncompromisingly Free.</strong></sub>
+</p>

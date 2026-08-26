@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" role="img" aria-label="SnapCap Pro Banner">
+  <defs>
+    <style>
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+      }
+      @keyframes glowPulse {
+        0%, 100% { filter: drop-shadow(0 0 15px rgba(0, 113, 227, 0.4)); opacity: 0.85; }
+        50% { filter: drop-shadow(0 0 35px rgba(175, 82, 222, 0.9)); opacity: 1; }
+      }
+      @keyframes scanline {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(600px); }
+      }
+      @keyframes recBlink {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(0.9); }
+      }
+      @keyframes rotateShutter {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      @keyframes cropPulse {
+        0%, 100% { stroke-dashoffset: 0; }
+        50% { stroke-dashoffset: 20; }
+      }
+      .bg-gradient { fill: url(#bgGrad); }
+      .scanner { fill: url(#scanGrad); animation: scanline 7s linear infinite; }
+      .core-logo { animation: float 6s ease-in-out infinite, glowPulse 4s ease-in-out infinite; transform-origin: center; }
+      .rec-dot { animation: recBlink 1.5s ease-in-out infinite; transform-origin: center; }
+      .shutter { animation: rotateShutter 20s linear infinite; transform-origin: center; }
+      .crop-rect { stroke-dasharray: 8 6; animation: cropPulse 3s linear infinite; }
+    </style>
+
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#08090C" />
+      <stop offset="50%" stop-color="#0D101A" />
+      <stop offset="100%" stop-color="#14121F" />
+    </linearGradient>
+
+    <linearGradient id="scanGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(0, 113, 227, 0)" />
+      <stop offset="50%" stop-color="rgba(88, 86, 214, 0.18)" />
+      <stop offset="100%" stop-color="rgba(175, 82, 222, 0)" />
+    </linearGradient>
+
+    <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00D2FF" />
+      <stop offset="45%" stop-color="#0071E3" />
+      <stop offset="75%" stop-color="#5856D6" />
+      <stop offset="100%" stop-color="#AF52DE" />
+    </linearGradient>
+
+    <radialGradient id="centerGlow" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="rgba(88, 86, 214, 0.35)" />
+      <stop offset="60%" stop-color="rgba(0, 113, 227, 0.12)" />
+      <stop offset="100%" stop-color="rgba(8, 9, 12, 0)" />
+    </radialGradient>
+
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.035)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" class="bg-gradient"/>
+  <rect width="100%" height="100%" fill="url(#centerGlow)"/>
+  <rect width="100%" height="100%" fill="url(#gridPattern)"/>
+  <rect width="100%" height="140" class="scanner"/>
+
+  <!-- Decorative HUD / Selection Frames -->
+  <g opacity="0.4">
+    <!-- Top-Left Crop Marker -->
+    <path d="M 80 80 H 130 M 80 80 V 130" stroke="#00D2FF" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <text x="90" y="105" fill="#00D2FF" font-family="'JetBrains Mono', monospace" font-size="11" opacity="0.8">CROP [1920×1080]</text>
+    
+    <!-- Top-Right Status Badge -->
+    <rect x="990" y="70" width="130" height="32" rx="16" fill="rgba(255,59,48,0.15)" stroke="rgba(255,59,48,0.5)" stroke-width="1.5"/>
+    <circle cx="1010" cy="86" r="5" fill="#FF3B30" class="rec-dot"/>
+    <text x="1025" y="91" fill="#FFF" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="1">REC 00:30</text>
+
+    <!-- Bottom-Left Zero-NPM badge -->
+    <rect x="80" y="400" width="160" height="30" rx="6" fill="rgba(52,199,89,0.1)" stroke="rgba(52,199,89,0.4)" stroke-width="1"/>
+    <text x="160" y="420" fill="#34C759" font-family="system-ui, sans-serif" font-size="12" font-weight="600" text-anchor="middle">⚡ 0 NPM DEPS · &lt;800KB</text>
+
+    <!-- Bottom-Right Offline First -->
+    <rect x="960" y="400" width="160" height="30" rx="6" fill="rgba(0,113,227,0.1)" stroke="rgba(0,113,227,0.4)" stroke-width="1"/>
+    <text x="1040" y="420" fill="#00D2FF" font-family="system-ui, sans-serif" font-size="12" font-weight="600" text-anchor="middle">🔒 OFFLINE-FIRST PRIVACY</text>
+  </g>
+
+  <!-- Central Camera Iris & Crop Box Core -->
+  <g class="core-logo" transform="translate(600, 190)">
+    <!-- Crop Selector Outer Box -->
+    <rect x="-85" y="-85" width="170" height="170" rx="36" fill="rgba(22, 22, 32, 0.85)" stroke="url(#brandGrad)" stroke-width="3" class="crop-rect"/>
+    
+    <!-- Shutter Aperture Blades -->
+    <g class="shutter">
+      <circle cx="0" cy="0" r="55" fill="none" stroke="rgba(175, 82, 222, 0.3)" stroke-width="2" stroke-dasharray="8 12"/>
+      <polygon points="0,-45 25,-10 15,35 -25,35 -35,-10" fill="none" stroke="#00D2FF" stroke-width="1.5" opacity="0.6"/>
+    </g>
+
+    <!-- Camera Lens / Video Record Indicator -->
+    <circle cx="0" cy="0" r="32" fill="url(#brandGrad)" style="filter: drop-shadow(0 4px 15px rgba(0, 113, 227, 0.6));"/>
+    <circle cx="0" cy="0" r="26" fill="#0B0B0E"/>
+    
+    <!-- Inner Lens Sparkle / Record Dot -->
+    <circle cx="0" cy="0" r="14" fill="#FF3B30" class="rec-dot"/>
+    <polygon points="-4,-6 8,0 -4,6" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Title & Typography -->
+  <g text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif">
+    <text x="600" y="340" font-size="52" font-weight="900" fill="#FFFFFF" letter-spacing="8" style="filter: drop-shadow(0 0 20px rgba(0, 113, 227, 0.7));">
+      SNAPCAP <tspan fill="url(#brandGrad)">PRO</tspan>
+    </text>
+    <text x="600" y="380" font-size="16" font-weight="700" fill="#00D2FF" letter-spacing="4" style="filter: drop-shadow(0 0 8px rgba(0, 210, 255, 0.4));">
+      OPEN-SOURCE SCREENSHOT &amp; 30s SCREEN RECORDER
+    </text>
+    <text x="600" y="415" font-size="14" font-weight="500" fill="#A1A1AA" letter-spacing="1">
+      Manifest V3 · 60fps HTML5 Canvas · Studio Annotations &amp; Redaction · 100% Free Forever
+    </text>
+  </g>
+</svg>

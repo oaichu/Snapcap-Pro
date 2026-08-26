@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" role="img" aria-label="SnapCap Studio Editor Interface Mockup">
+  <defs>
+    <style>
+      @keyframes pulseTarget {
+        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px #00D2FF); }
+        50% { transform: scale(1.05); filter: drop-shadow(0 0 12px #00D2FF); }
+      }
+      @keyframes recProgress {
+        0% { width: 0px; }
+        100% { width: 480px; }
+      }
+      @keyframes floatToolbar {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
+      }
+      .target-box { animation: pulseTarget 3s ease-in-out infinite; transform-origin: center; }
+      .rec-bar { animation: recProgress 8s linear infinite; }
+      .floating-bar { animation: floatToolbar 5s ease-in-out infinite; }
+    </style>
+    
+    <linearGradient id="studioBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141622" />
+      <stop offset="100%" stop-color="#0A0B10" />
+    </linearGradient>
+
+    <linearGradient id="toolGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0071E3" />
+      <stop offset="100%" stop-color="#5856D6" />
+    </linearGradient>
+
+    <filter id="blurFilter">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+
+    <pattern id="pixelPattern" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="#333846"/>
+      <rect x="4" width="4" height="4" fill="#202430"/>
+      <rect y="4" width="4" height="4" fill="#202430"/>
+      <rect x="4" y="4" width="4" height="4" fill="#333846"/>
+    </pattern>
+  </defs>
+
+  <!-- Outer Window Frame -->
+  <rect width="1000" height="480" rx="16" fill="url(#studioBg)" stroke="#232738" stroke-width="2"/>
+
+  <!-- Window Header Bar -->
+  <rect width="1000" height="46" rx="16" fill="#181A28"/>
+  <rect y="30" width="1000" height="16" fill="#181A28"/>
+  <line x1="0" y1="46" x2="1000" y2="46" stroke="#2A2F45" stroke-width="1"/>
+
+  <!-- Window Controls -->
+  <circle cx="28" cy="23" r="6" fill="#FF5F56"/>
+  <circle cx="48" cy="23" r="6" fill="#FFBD2E"/>
+  <circle cx="68" cy="23" r="6" fill="#27C93F"/>
+
+  <!-- Window Title -->
+  <text x="500" y="28" fill="#E4E4E7" font-family="-apple-system, system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="middle">
+    SnapCap Pro Studio · Canvas Editor &amp; Video Frame Extractor
+  </text>
+  <rect x="850" y="12" width="120" height="22" rx="11" fill="rgba(0,210,255,0.12)" stroke="#00D2FF" stroke-width="1"/>
+  <text x="910" y="27" fill="#00D2FF" font-family="monospace" font-size="11" font-weight="600" text-anchor="middle">1920×1080 · 60fps</text>
+
+  <!-- Canvas Workspace Area -->
+  <rect x="30" y="65" width="940" height="385" rx="12" fill="#0E1017" stroke="#1F2333" stroke-width="1.5"/>
+
+  <!-- Mockup: Web Page Content Under Annotation -->
+  <g transform="translate(60, 95)">
+    <!-- Simulated App Header -->
+    <rect width="880" height="40" rx="8" fill="#1A1D2C"/>
+    <circle cx="25" cy="20" r="8" fill="#0071E3"/>
+    <rect x="45" y="15" width="120" height="10" rx="4" fill="#3D4560"/>
+    <rect x="680" y="12" width="80" height="16" rx="4" fill="#282E42"/>
+    <rect x="780" y="12" width="80" height="16" rx="4" fill="#0071E3"/>
+
+    <!-- Simulated Content Body -->
+    <rect y="55" width="560" height="180" rx="8" fill="#151724" stroke="#252A3C"/>
+    <text x="25" y="85" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="700">Production Performance Metric</text>
+    <rect x="25" y="105" width="400" height="8" rx="4" fill="#282E42"/>
+    <rect x="25" y="125" width="320" height="8" rx="4" fill="#282E42"/>
+    <rect x="25" y="145" width="480" height="8" rx="4" fill="#282E42"/>
+
+    <!-- Sensitive Passkey Block (Redacted with Blur / Pixelate) -->
+    <g transform="translate(25, 175)">
+      <rect width="260" height="36" rx="6" fill="url(#pixelPattern)" stroke="#AF52DE" stroke-width="1.5"/>
+      <rect width="260" height="36" rx="6" fill="rgba(175, 82, 222, 0.15)"/>
+      <text x="130" y="23" fill="#FFFFFF" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="2">🌫️ [REDACTED KEY]</text>
+    </g>
+
+    <!-- Side Card (Annotated Target) -->
+    <g class="target-box" transform="translate(590, 55)">
+      <rect width="290" height="180" rx="8" fill="#161A28" stroke="#00D2FF" stroke-width="2.5" stroke-dasharray="6 4"/>
+      <text x="25" y="35" fill="#00D2FF" font-family="system-ui, sans-serif" font-size="14" font-weight="700">⚡ Zero-Latency Rendering</text>
+      <text x="25" y="65" fill="#34C759" font-family="monospace" font-size="28" font-weight="800">60.0 FPS</text>
+      <text x="25" y="95" fill="#A1A1AA" font-family="system-ui, sans-serif" font-size="12">Pure Canvas Native 2D</text>
+      <rect x="25" y="120" width="180" height="6" rx="3" fill="#34C759"/>
+    </g>
+
+    <!-- Vector Annotation Arrow -->
+    <g>
+      <path d="M 440 210 Q 520 180 580 150" fill="none" stroke="#FF3B30" stroke-width="4" stroke-linecap="round"/>
+      <polygon points="590,145 572,143 582,158" fill="#FF3B30"/>
+      <!-- Annotation Text Tag -->
+      <rect x="360" y="215" width="160" height="26" rx="13" fill="#FF3B30"/>
+      <text x="440" y="232" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">🔥 Ultra-Smooth 60fps</text>
+    </g>
+  </g>
+
+  <!-- Video Playback & Frame Grabber Bar (At Bottom of Canvas) -->
+  <g transform="translate(60, 395)">
+    <rect width="880" height="42" rx="8" fill="#151722" stroke="#252B3D" stroke-width="1.5"/>
+    <circle cx="24" cy="21" r="10" fill="#FF3B30"/>
+    <polygon points="21,16 29,21 21,26" fill="#FFF"/>
+    <text x="45" y="25" fill="#E4E4E7" font-family="monospace" font-size="12" font-weight="600">00:24 / 00:30</text>
+    
+    <!-- Scrubber Track -->
+    <rect x="155" y="18" width="500" height="6" rx="3" fill="#252A3C"/>
+    <rect x="155" y="18" width="380" height="6" rx="3" fill="#00D2FF" class="rec-bar"/>
+    <circle cx="535" cy="21" r="7" fill="#00D2FF"/>
+
+    <!-- Frame Capture Button -->
+    <rect x="680" y="8" width="180" height="26" rx="6" fill="url(#toolGrad)"/>
+    <text x="770" y="25" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">📸 Extract Frame to Edit</text>
+  </g>
+
+  <!-- Floating Studio Toolbar Mockup -->
+  <g class="floating-bar" transform="translate(300, 56)">
+    <rect width="400" height="44" rx="22" fill="rgba(26, 29, 44, 0.95)" stroke="rgba(255,255,255,0.15)" stroke-width="1" style="filter: drop-shadow(0 10px 25px rgba(0,0,0,0.6)); backdrop-filter: blur(16px);"/>
+    
+    <!-- Tool Icons -->
+    <g font-size="15" transform="translate(20, 27)" text-anchor="middle">
+      <text x="15">✂️</text>
+      <text x="50" fill="#00D2FF">✏️</text>
+      <text x="85">↗️</text>
+      <text x="120">🔲</text>
+      <text x="155">⭕</text>
+      <text x="190">T</text>
+      <text x="225">🌫️</text>
+      <!-- Color dots -->
+      <circle cx="265" cy="-5" r="7" fill="#FF3B30"/>
+      <circle cx="285" cy="-5" r="7" fill="#00D2FF"/>
+      <circle cx="305" cy="-5" r="7" fill="#34C759"/>
+      <!-- Action buttons -->
+      <rect x="325" y="-16" width="45" height="22" rx="6" fill="#0071E3"/>
+      <text x="347" y="-1" fill="#FFF" font-family="system-ui" font-size="11" font-weight="700">PNG</text>
+    </g>
+  </g>
+</svg>
