@@ -1,4 +1,4 @@
-import { test, describe, beforeEach, afterEach, mock } from 'node:test';
+import { test, describe, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 
 const mockVerifyIdToken = mock.fn();
@@ -9,14 +9,6 @@ const mockAdmin = {
     verifyIdToken: mockVerifyIdToken,
     getUser: mockGetUser,
   }),
-};
-
-const mockFirebaseAdmin = {
-  apps: [],
-  initializeApp: mock.fn(),
-  credential: {
-    cert: mock.fn(),
-  },
 };
 
 async function authenticate(req, res, next) {

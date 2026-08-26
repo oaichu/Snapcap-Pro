@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, copyFileSync, unlinkSync } from 'fs';
 import { resolve } from 'path';
 import { execSync } from 'child_process';
 
@@ -296,15 +296,27 @@ const tempBannerHtmlPath = resolve(rootDir, 'temp_banner_render.html');
 writeFileSync(tempHtmlPath, renderHtml, 'utf8');
 writeFileSync(tempBannerHtmlPath, renderBannerHtml, 'utf8');
 
-const edgeCandidates = [
+const browserCandidates = [
+  // Windows
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  // Linux
+  '/usr/bin/google-chrome',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/snap/bin/chromium',
+  '/snap/bin/google-chrome',
+  // macOS
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
 ];
 
 let browserPath = null;
-for (const p of edgeCandidates) {
+for (const p of browserCandidates) {
   if (existsSync(p)) {
     browserPath = p;
     break;
@@ -313,6 +325,12 @@ for (const p of edgeCandidates) {
 
 if (!browserPath) {
   console.warn('Could not locate Edge/Chrome executable for screenshot rendering.');
+  try {
+    if (existsSync(tempHtmlPath)) unlinkSync(tempHtmlPath);
+    if (existsSync(tempBannerHtmlPath)) unlinkSync(tempBannerHtmlPath);
+  } catch (err) {
+    /* ignore cleanup failure */
+  }
   process.exit(0);
 }
 
@@ -327,7 +345,7 @@ for (const size of iconSizes) {
   const cmd = `"${browserPath}" --headless --disable-gpu --default-background-color=00000000 --hide-scrollbars --window-size=${size},${size} --screenshot="${outPng}" "file:///${tempHtmlPath.replace(/\\/g, '/')}"`;
   execSync(cmd, { stdio: 'ignore' });
   if (existsSync(outPng)) {
-    execSync(`copy /Y "${outPng}" "${distPng}"`, { stdio: 'ignore', shell: 'cmd.exe' });
+    copyFileSync(outPng, distPng);
     console.log(`  icon${size}.png rendered (${size}x${size})`);
   }
 }
@@ -340,10 +358,8 @@ console.log('  snapcap-hero-banner.png rendered (1280x640)');
 
 // Clean up temp render HTML
 try {
-  execSync(`del /F /Q "${tempHtmlPath}" "${tempBannerHtmlPath}"`, {
-    stdio: 'ignore',
-    shell: 'cmd.exe',
-  });
+  if (existsSync(tempHtmlPath)) unlinkSync(tempHtmlPath);
+  if (existsSync(tempBannerHtmlPath)) unlinkSync(tempBannerHtmlPath);
 } catch (err) {
   /* ignore cleanup failure */
 }

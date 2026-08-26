@@ -1,38 +1,8 @@
-import { test, describe, beforeEach, afterEach, before, after } from 'node:test';
+import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-const tests = [];
-let currentSuite = '';
-
-function suite(name, fn) {
-  currentSuite = name;
-  fn();
-}
-
-function it(name, fn) {
-  tests.push({ suite: currentSuite, name, fn });
-}
-
-async function runTests() {
-  let passed = 0;
-  let failed = 0;
-
-  for (const test of tests) {
-    try {
-      await test.fn();
-      passed++;
-    } catch (error) {
-      failed++;
-      console.error(`FAIL: ${test.suite} - ${test.name}`);
-      console.error(error.message);
-    }
-  }
-
-  return { passed, failed };
-}
-
-suite('API Routes', () => {
-  it('should have correct endpoint structure', () => {
+describe('API Routes Structure', () => {
+  test('should have correct endpoint structure', () => {
     const API_BASE_URL = 'http://localhost:3000/api';
     const endpoints = {
       health: `${API_BASE_URL}/health`,
