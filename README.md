@@ -195,27 +195,14 @@ SnapCap Pro stores all captures locally inside your browser's sandboxed **`SnapC
   <img src="docs/assets/architecture.svg" width="100%" alt="Manifest V3 Architecture Map"/>
 </p>
 
-```mermaid
-flowchart TB
-    subgraph UI ["User Interaction Layer"]
-        Popup["Extension Popup<br/>(popup.html)"]
-        ContentScript["In-Page Overlay<br/>(content_script.js)"]
-        Studio["Studio Editor & Gallery<br/>(editor.html)"]
-    end
-
-    subgraph CoreEngine ["Background MV3 Engine"]
-        SW["Service Worker<br/>(service_worker.js)"]
-        OffscreenDoc["Offscreen Document<br/>(offscreen.html / MediaRecorder)"]
-        Storage[("IndexedDB<br/>SnapCapDB (Local)")]
-    end
-
-    Popup -->|Capture / Record Trigger| SW
-    ContentScript -->|Area Coordinates & Scroll Tiles| SW
-    SW -->|Binary Canvas Decoding| Storage
-    SW -->|Lifecycle Dispatch| OffscreenDoc
-    OffscreenDoc -->|Direct getDisplayMedia & WebM Chunks| Storage
-    Storage -->|Load & Render| Studio
-```
+| Component | Responsibility | Performance / Security Profile |
+| :--- | :--- | :--- |
+| **Popup Dashboard** | User control center, capture triggers, countdown timers, stream selection | ⚡ Instant 1ms launch, zero runtime dependencies |
+| **In-Page Overlay** | Sub-pixel drag crop, scroll auto-stitch, sticky header suppression | 🔒 Closed ShadowRoot isolation, zero page CSS bleed |
+| **Service Worker (MV3)**| Orchestration hub, GPU tile stitcher (up to 16K), session watchdog | 🛡️ Auto-reconciling keepalive, zero-fetch binary parser |
+| **Offscreen Recorder** | 4K / 60fps MediaRecorder, dual-stream audio mixer | 🎥 Native WebM chunking, hardware-accelerated VP9/Opus |
+| **SnapCapDB (IndexedDB)**| Local persistent store for binary image blobs & video recordings | 💎 100% Offline, sandboxed, zero cloud telemetry |
+| **Studio Suite Pro** | 60fps Canvas 2D annotation engine, vector tools & privacy blur | 🚀 20-step undo/redo buffer, zero-copy texture load |
 
 ---
 
