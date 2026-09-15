@@ -6,6 +6,7 @@
 
 ### The High-Velocity Screen Studio & 4K Recorder for Creators & Builders
 
+[![Release](https://img.shields.io/github/v/release/oaichu/Snapcap-Pro?color=00F5FF&label=Release&style=for-the-badge)](https://github.com/oaichu/Snapcap-Pro/releases/latest)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3%20Certified-00F5FF?style=for-the-badge&logo=googlechrome&logoColor=black)](manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT%20Commercial%20Safe-00FFB2?style=for-the-badge&logo=opensourceinitiative&logoColor=black)](LICENSE)
 [![Support on Ko-fi](https://img.shields.io/badge/Support-Buy%20Me%20A%20Coffee-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/oaichu)
@@ -133,16 +134,34 @@ SnapCap Pro includes a complete built-in graphic editor designed specifically fo
   <img src="docs/assets/quickstart.svg" width="100%" alt="Quickstart Installation Terminal"/>
 </p>
 
-### Option A: Load Directly in Developer Mode (Fastest)
+### 📥 Option A: Download Pre-built Extension (Fastest & Easiest)
 
-1. Clone or download this repository:
+Download the ready-to-use extension package from the **[Latest GitHub Release](https://github.com/oaichu/Snapcap-Pro/releases/latest)**:
+
+* **Single-File Direct Install (`.crx`)**:
+  1. Download [**`snapcap-pro-v1.1.0.crx`**](https://github.com/oaichu/Snapcap-Pro/releases/latest/download/snapcap-pro-v1.1.0.crx).
+  2. Open Chrome, Edge, Brave, or Cốc Cốc and navigate to `chrome://extensions`.
+  3. Turn on **Developer mode** in the top-right corner.
+  4. Drag and drop the downloaded `.crx` file onto the extensions page.
+  5. Click **Add extension** when prompted. 🎉
+
+* **Standard Zip Package (`.zip`)**:
+  1. Download [**`snapcap-pro-v1.1.0.zip`**](https://github.com/oaichu/Snapcap-Pro/releases/latest/download/snapcap-pro-v1.1.0.zip) and extract it.
+  2. Go to `chrome://extensions` and enable **Developer mode**.
+  3. Click **Load unpacked** (Tải tiện ích đã giải nén) and select the extracted folder.
+
+---
+
+### Option B: Load from Source (Developer Mode)
+
+1. Clone this repository:
    ```bash
    git clone https://github.com/oaichu/Snapcap-Pro.git
+   cd Snapcap-Pro
+   npm install
+   npm run release
    ```
-2. Open Google Chrome (or Edge, Brave, Opera, Arc) and navigate to `chrome://extensions`.
-3. Enable **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** and select the `open-capture-extension` folder.
-5. 🎉 **Done!** Pin **SnapCap Pro** to your browser toolbar!
+2. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the `dist/` directory.
 
 ---
 
