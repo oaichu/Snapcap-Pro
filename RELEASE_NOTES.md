@@ -57,6 +57,27 @@ PASS | 25 backend integration & schema tests pass (100%)
 
 ## 📦 Distribution Packages
 
-- **Web Store Production Archive**: [`release/snapcap-pro-v1.1.0-chrome-webstore.zip`](release/snapcap-pro-v1.1.0-chrome-webstore.zip)
-- **Root Mirror**: [`snapcap-pro-v1.1.0-chrome-webstore.zip`](snapcap-pro-v1.1.0-chrome-webstore.zip)
-- **Unpacked Directory for Developer Testing**: `dist/`
+| File Asset | Description | Installation Method |
+| :--- | :--- | :--- |
+| **`snapcap-pro-v1.1.0.crx`** | **File cài đặt tiện ích duy nhất** (Single CRX package) | Kéo thả trực tiếp vào `chrome://extensions` (Bật Developer Mode) |
+| **`snapcap-pro-v1.1.0.zip`** | Bản đóng gói đầy đủ (Full extension bundle) | Giải nén -> Bấm **Load unpacked** (Tải tiện ích đã giải nén) |
+| **`snapcap-pro-v1.1.0-chrome-webstore.zip`** | Bản tối ưu để publish lên Chrome Web Store | Dành cho upload Developer Dashboard |
+
+---
+
+## 🚀 Hướng dẫn cài đặt vào trình duyệt (Installation Guide)
+
+### Cách 1: Cài trực tiếp bằng file duy nhất (`.crx`) — Nhanh nhất
+1. Tải file **`snapcap-pro-v1.1.0.crx`** ở mục **Assets** bên dưới.
+2. Mở trình duyệt Chrome / Edge / Brave / Cốc Cốc và truy cập đường dẫn: `chrome://extensions` (hoặc `edge://extensions`).
+3. Bật công tắc **Chế độ dành cho nhà phát triển** (**Developer mode**) ở góc trên bên phải.
+4. Kéo và thả file `snapcap-pro-v1.1.0.crx` trực tiếp vào trang `chrome://extensions`.
+5. Nhấn **Thêm tiện ích (Add extension)** để hoàn tất cài đặt.
+
+### Cách 2: Cài bằng file `.zip` (Khuyên dùng nếu trình duyệt chặn kéo thả CRX)
+1. Tải file **`snapcap-pro-v1.1.0.zip`** ở mục **Assets** bên dưới và giải nén ra một thư mục trên máy tính.
+2. Mở trình duyệt và truy cập `chrome://extensions`.
+3. Bật **Chế độ dành cho nhà phát triển** (**Developer mode**).
+4. Nhấn nút **Tải tiện ích đã giải nén** (**Load unpacked**) ở góc trên bên trái.
+5. Chọn thư mục vừa giải nén.
+6. Tiện ích **SnapCap Pro** sẽ lập tức xuất hiện trên thanh công cụ! Ghim (Pin) tiện ích để tiện sử dụng.
