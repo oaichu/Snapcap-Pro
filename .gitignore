@@ -15,3 +15,6 @@ backend/serviceAccountKey.json
 # Release artifacts
 release/
 *.zip
+*.crx
+*.pem
+.temp-chrome-pack/
