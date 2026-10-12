@@ -11,8 +11,10 @@ const ACTION_OFFSCREEN_START_RECORDING = 'OFFSCREEN_START_RECORDING';
 const ACTION_OFFSCREEN_STOP_RECORDING = 'OFFSCREEN_STOP_RECORDING';
 const ACTION_STOP_ACK = 'STOP_ACK';
 const ACTION_RECORDING_BUSY = 'RECORDING_BUSY';
+const ACTION_RECORDING_STARTED = 'RECORDING_STARTED';
 const ACTION_RECORDING_COMPLETE = 'RECORDING_COMPLETE';
 const ACTION_RECORDING_ERROR = 'RECORDING_ERROR';
+const ACTION_RECORDING_CANCELLED = 'RECORDING_CANCELLED';
 
 const HARD_CAP_GRACE_MS = 10000;
 const CHUNK_MS = 500;
@@ -43,6 +45,9 @@ let startInFlight = false;
 // A stop that arrived during that window; honoured as soon as the recorder
 // exists instead of being silently dropped (N-2).
 let pendingStop = false;
+// Set when the honoured pendingStop means "abort, save nothing" — finalize()
+// then reports RECORDING_CANCELLED instead of storing a 0-second clip.
+let discardResult = false;
 
 // Latch for the document-teardown path (see handleTeardown below). Declared
 // here with the other module-level state because startRecording() resets it
@@ -170,6 +175,7 @@ async function startRecording(streamId, duration, includeMic, _canRequestAudioTr
   finalized = false;
   recordingArmed = false;
   pendingStop = false;
+  discardResult = false;
   teardownStarted = false;
   recordedChunks = [];
   clearTimers();
@@ -191,7 +197,7 @@ async function startRecording(streamId, duration, includeMic, _canRequestAudioTr
           // User clicked Cancel in screen picker
           startInFlight = false;
           releaseStream();
-          sendToSw({ action: 'RECORDING_CANCELLED' });
+          sendToSw({ action: ACTION_RECORDING_CANCELLED });
           return;
         }
         // Fallback to video-only if system audio was not supported
@@ -204,7 +210,7 @@ async function startRecording(streamId, duration, includeMic, _canRequestAudioTr
           if (videoOnlyErr.name === 'NotAllowedError' || videoOnlyErr.name === 'AbortError') {
             startInFlight = false;
             releaseStream();
-            sendToSw({ action: 'RECORDING_CANCELLED' });
+            sendToSw({ action: ACTION_RECORDING_CANCELLED });
             return;
           }
           console.warn('[SnapCap offscreen] getDisplayMedia video-only failed:', videoOnlyErr);
@@ -371,6 +377,12 @@ async function startRecording(streamId, duration, includeMic, _canRequestAudioTr
   recordingArmed = true;
   startInFlight = false;
 
+  // Authoritative T0: the picker wait is over and media is flowing. The
+  // service worker promotes the session to RECORDING with this timestamp, so
+  // every countdown (page badge, popup, session deadline) tracks the real clip
+  // instead of running ahead by however long the picker was open.
+  sendToSw({ action: ACTION_RECORDING_STARTED, startedAt: Date.now() });
+
   recordTimeout = setTimeout(() => {
     stopRecording('duration-reached');
   }, duration * 1000);
@@ -391,9 +403,11 @@ async function startRecording(streamId, duration, includeMic, _canRequestAudioTr
 
   // A stop that arrived while getUserMedia was pending is honoured now that a
   // recorder exists. The timers above are armed first, so the hard cap still
-  // rescues a stop() whose onstop never fires (N-2).
+  // rescues a stop() whose onstop never fires (N-2). The clip is discarded:
+  // the user already told us they do not want it.
   if (pendingStop) {
     pendingStop = false;
+    discardResult = true;
     stopRecording('stop-requested-during-start');
     return;
   }
@@ -455,6 +469,13 @@ function finalize() {
   saveInFlight = (async () => {
     try {
       releaseStream();
+      if (discardResult) {
+        // A stop arrived before recording really began — report a cancel so
+        // the service worker tears the session down without delivering an
+        // empty clip.
+        sendToSw({ action: ACTION_RECORDING_CANCELLED });
+        return;
+      }
       const blob = new Blob(recordedChunks, { type: recordingMimeType });
       if (blob.size === 0) {
         sendToSw({

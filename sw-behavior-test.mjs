@@ -159,11 +159,29 @@ function check(name, ok, detail) {
 // 1. START_RECORDING (popup relays stream id + the tab it is showing)
 // ---------------------------------------------------------------------------
 await send({ action: 'START_RECORDING', target: 'sw', streamId: 'stream-abc', canRequestAudioTrack: true, duration: 15, mic: false, tabId: 42 });
-await sleep(600); // offscreen warm-up + relay + badge
+await sleep(600); // offscreen warm-up + relay
 
-// 2. Session must be RECORDING and carry the reported tab
+// 1b. While the (offscreen-owned) picker is open the session must stay
+// 'starting' — it only becomes 'recording' on the recorder's RECORDING_STARTED.
+const statePicker = await send({ action: 'GET_RECORDING_STATE', target: 'sw' });
+check(
+  'session stays STARTING during picker wait',
+  statePicker.res && statePicker.res.state === 'starting',
+  JSON.stringify(statePicker.res)
+);
+
+const realStartedAt = Date.now();
+await send({ action: 'RECORDING_STARTED', target: 'sw', startedAt: realStartedAt });
+await sleep(300);
+
+// 2. Session must be RECORDING, carry the reported tab AND the recorder's T0
 const state1 = await send({ action: 'GET_RECORDING_STATE', target: 'sw' });
 check('session becomes RECORDING', state1.res && state1.res.state === 'recording', JSON.stringify(state1.res));
+check(
+  'session clock starts at real recorder start',
+  state1.res && state1.res.startedAt === realStartedAt,
+  'startedAt=' + (state1.res && state1.res.startedAt) + ' expected=' + realStartedAt
+);
 check('session carries tabId 42', state1.res && state1.res.tabId === 42, 'tabId=' + (state1.res && state1.res.tabId));
 
 // 3. The in-page badge MUST be sent to tab 42 (the fix under test)
@@ -199,9 +217,21 @@ check('offscreen document closed', offscreenCloseCount >= 1, 'closes=' + offscre
 // ---------------------------------------------------------------------------
 await send({ action: 'START_RECORDING', target: 'sw', streamId: 'stream-xyz', canRequestAudioTrack: false, duration: 10, mic: false, tabId: null });
 await sleep(600);
+await send({ action: 'RECORDING_STARTED', target: 'sw', startedAt: Date.now() });
+await sleep(200);
 const state3 = await send({ action: 'GET_RECORDING_STATE', target: 'sw' });
 check('missing tabId falls back to active tab', state3.res && state3.res.tabId === 7, 'tabId=' + (state3.res && state3.res.tabId));
 check('fallback badge still shown', expectBadge ? startedBadge && startedBadge.tabId === 7 : startedBadge === null, startedBadge && 'badge at tab ' + startedBadge.tabId);
+
+// ---------------------------------------------------------------------------
+// 7. Picker cancel: offscreen pushes RECORDING_CANCELLED -> session must reset
+// ---------------------------------------------------------------------------
+await send({ action: 'START_RECORDING', target: 'sw', streamId: 'stream-cancel', canRequestAudioTrack: false, duration: 10, mic: false, tabId: 42 });
+await sleep(600);
+await send({ action: 'RECORDING_CANCELLED', target: 'sw' });
+await sleep(300);
+const state4 = await send({ action: 'GET_RECORDING_STATE', target: 'sw' });
+check('picker cancel returns session to IDLE', state4.res && state4.res.state === 'idle', JSON.stringify(state4.res));
 
 const failed = results.filter(r => !r.ok);
 console.log('\n===== SUMMARY =====');

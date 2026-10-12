@@ -1,6 +1,6 @@
 {
   "name": "snapcap-extension",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "SnapCap Chrome Extension Build System (100% free for the community)",
   "license": "MIT",
   "type": "module",

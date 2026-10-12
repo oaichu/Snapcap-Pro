@@ -18,8 +18,10 @@ const ACTION_OFFSCREEN_START_RECORDING = 'OFFSCREEN_START_RECORDING';
 const ACTION_OFFSCREEN_STOP_RECORDING = 'OFFSCREEN_STOP_RECORDING';
 const ACTION_STOP_ACK = 'STOP_ACK';
 const ACTION_RECORDING_BUSY = 'RECORDING_BUSY';
+const ACTION_RECORDING_STARTED = 'RECORDING_STARTED';
 const ACTION_RECORDING_COMPLETE = 'RECORDING_COMPLETE';
 const ACTION_RECORDING_ERROR = 'RECORDING_ERROR';
+const ACTION_RECORDING_CANCELLED = 'RECORDING_CANCELLED';
 const ACTION_GET_RECORDING_STATE = 'GET_RECORDING_STATE';
 const ACTION_STOP_RECORDING_TRIGGER = 'STOP_RECORDING_TRIGGER';
 
@@ -521,6 +523,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       handleStopAck();
       return;
 
+    case ACTION_RECORDING_STARTED:
+      handleRecordingStarted(msg).catch(err =>
+        console.error('[SnapCap] handleRecordingStarted failed:', err)
+      );
+      return;
+
+    case ACTION_RECORDING_CANCELLED:
+      // The user pressed Cancel in the picker, or a stop requested during
+      // acquisition discarded the clip. Either way nothing was recorded.
+      terminateSession({ reason: 'recording-cancelled', cancelled: true, graceful: true }).catch(
+        err => console.error('[SnapCap] cancel termination failed:', err)
+      );
+      return;
+
     case ACTION_RECORDING_BUSY:
       // Informational only — never a failure (C-3).
       sendToPopup({
@@ -924,13 +940,12 @@ async function startRecording(duration, mic, streamId, canRequestAudioTrack, tab
   const warmed = await readSession();
   if (warmed.state !== STATE_STARTING) return;
 
-  const startedAt = Date.now();
-  const updated = await patchSessionIfState([STATE_STARTING], {
-    state: STATE_RECORDING,
-    startedAt,
-  });
-  if (!updated) return; // torn down in the meantime
-
+  // The session stays STARTING while the offscreen document acquires the
+  // stream: getDisplayMedia() shows the native picker and waits on human time,
+  // so stamping startedAt here would make every countdown (badge, popup,
+  // session deadline) run ahead of the real recording by the picker wait.
+  // The offscreen document pushes RECORDING_STARTED the moment
+  // MediaRecorder.start() actually runs — that is the authoritative T0.
   let res;
   try {
     res = await chrome.runtime.sendMessage({
@@ -947,16 +962,29 @@ async function startRecording(duration, mic, streamId, canRequestAudioTrack, tab
   }
 
   // N-B: the recorder refused the start because it is still busy. The session
-  // was optimistically promoted to RECORDING above, so roll it back instead of
-  // leaving a phantom recording nothing will ever finish.
+  // is still STARTING, so roll it back instead of leaving a phantom recording
+  // nothing will ever finish.
   if (res && res.action === ACTION_RECORDING_BUSY) {
     await failStart(
       'The recorder was still busy with the previous clip, so this recording did not start. Try again in a moment.'
     );
     return;
   }
+}
 
-  await showBadge(warmed.tabId, safeDuration, startedAt);
+// The offscreen document reports the moment MediaRecorder actually started —
+// AFTER the user picked a source in the native picker. This is the only clock
+// that makes the countdown true: the badge, the popup's remaining time and the
+// session deadline all derive from session.startedAt.
+async function handleRecordingStarted(msg) {
+  const startedAt =
+    typeof msg.startedAt === 'number' && msg.startedAt > 0 ? msg.startedAt : Date.now();
+  const session = await patchSessionIfState([STATE_STARTING, STATE_RECORDING], {
+    state: STATE_RECORDING,
+    startedAt,
+  });
+  if (!session) return; // stopped/torn down while the picker was open
+  await showBadge(session.tabId, session.duration, startedAt);
 }
 
 async function failStart(message) {
